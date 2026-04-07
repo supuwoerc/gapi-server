@@ -1,0 +1,48 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Go build output
+/bin/
+/dist/
+
+# Dependency directories
+/vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Config with secrets (keep template)
+configs/config.local.yaml
+
+# Wire generated (optional — can regenerate)
+# cmd/server/wire_gen.go
+
+# Environment
+.env
+.env.local
+
+# AI / Editor tool configs
+.agents/
+.continue/
+.opencode/
+.roo/
+.sisyphus/

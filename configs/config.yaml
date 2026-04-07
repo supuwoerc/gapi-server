@@ -1,0 +1,17 @@
+server:
+  host: "0.0.0.0"
+  port: 8080
+
+database:
+  host: "127.0.0.1"
+  port: 3306
+  user: "root"
+  password: "root"
+  dbname: "gapi"
+
+log:
+  level: "info"
+  filename: "./logs/app.log"
+  max_size: 100       # megabytes
+  max_backups: 5
+  max_age: 30         # days
