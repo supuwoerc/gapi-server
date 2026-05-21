@@ -46,3 +46,4 @@ configs/config.local.yaml
 .opencode/
 .roo/
 .sisyphus/
+/.opencode-router/
