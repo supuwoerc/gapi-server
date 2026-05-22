@@ -14,7 +14,7 @@ import (
 	"gopkg.in/lumberjack.v2"
 )
 
-func Init(cfg *config.LogConfig) *zap.Logger {
+func NewZapLogger(cfg *config.LogConfig) *zap.Logger {
 	writeSyncer := getLogWriter(cfg)
 	level := parseLevel(cfg.Level)
 	encoder := getEncoder()

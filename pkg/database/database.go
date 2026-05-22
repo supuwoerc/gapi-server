@@ -9,8 +9,8 @@ import (
 	"gorm.io/gorm"
 )
 
-// Init creates a new GORM DB connection from config.
-func Init(cfg *config.DatabaseConfig) (*gorm.DB, error) {
+// NewConnection creates a new GORM DB connection from config.
+func NewConnection(cfg *config.DatabaseConfig) (*gorm.DB, error) {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		cfg.User,
 		cfg.Password,

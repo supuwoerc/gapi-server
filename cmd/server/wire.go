@@ -24,8 +24,8 @@ func WireApp() (*gin.Engine, func(), error) {
 		provideDBConfig,
 		provideServerConfig,
 
-		logger.Init,
-		database.Init,
+		logger.NewZapLogger,
+		database.NewConnection,
 
 		repository.NewRepository,
 
@@ -33,7 +33,7 @@ func WireApp() (*gin.Engine, func(), error) {
 
 		handler.NewHealthHandler,
 
-		router.Init,
+		router.NewEngine,
 	)
 	return nil, nil, nil
 }

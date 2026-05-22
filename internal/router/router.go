@@ -8,8 +8,8 @@ import (
 	"go.uber.org/zap"
 )
 
-// Init sets up the gin engine with middleware and routes.
-func Init(logger *zap.Logger, healthHandler *handler.HealthHandler) *gin.Engine {
+// NewEngine sets up the gin engine with middleware and routes.
+func NewEngine(logger *zap.Logger, healthHandler *handler.HealthHandler) *gin.Engine {
 	r := gin.New()
 
 	// Global middleware
