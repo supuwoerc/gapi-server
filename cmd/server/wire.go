@@ -16,26 +16,23 @@ import (
 	"github.com/google/wire"
 )
 
-func WireApp(cfg *config.Config) (*gin.Engine, func(), error) {
+func WireApp() (*gin.Engine, func(), error) {
 	wire.Build(
-		// Config providers
+		config.NewViper,
+		config.NewConfig,
 		provideLogConfig,
 		provideDBConfig,
+		provideServerConfig,
 
-		// Infrastructure
 		logger.Init,
 		database.Init,
 
-		// Data layer
 		repository.NewRepository,
 
-		// Business layer
 		service.NewService,
 
-		// Handler layer
 		handler.NewHealthHandler,
 
-		// Router
 		router.Init,
 	)
 	return nil, nil, nil
@@ -47,4 +44,8 @@ func provideLogConfig(cfg *config.Config) *config.LogConfig {
 
 func provideDBConfig(cfg *config.Config) *config.DatabaseConfig {
 	return &cfg.Database
+}
+
+func provideServerConfig(cfg *config.Config) *config.ServerConfig {
+	return &cfg.Server
 }

@@ -1,54 +1,41 @@
 package config
 
 import (
-	"os"
-
-	"gopkg.in/yaml.v3"
+	"github.com/spf13/viper"
 )
 
-// Config holds all configuration sections.
 type Config struct {
-	Server   ServerConfig   `yaml:"server"`
-	Database DatabaseConfig `yaml:"database"`
-	Log      LogConfig      `yaml:"log"`
+	Server   ServerConfig   `mapstructure:"server"`
+	Database DatabaseConfig `mapstructure:"database"`
+	Log      LogConfig      `mapstructure:"log"`
 }
 
-// ServerConfig holds HTTP server settings.
 type ServerConfig struct {
-	Host string `yaml:"host"`
-	Port int    `yaml:"port"`
+	Host string `mapstructure:"host"`
+	Port int    `mapstructure:"port"`
 }
 
-// DatabaseConfig holds MySQL connection settings.
 type DatabaseConfig struct {
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-	User     string `yaml:"user"`
-	Password string `yaml:"password"`
-	DBName   string `yaml:"dbname"`
+	Host     string `mapstructure:"host"`
+	Port     int    `mapstructure:"port"`
+	User     string `mapstructure:"user"`
+	Password string `mapstructure:"password"`
+	DBName   string `mapstructure:"dbname"`
 }
 
-// LogConfig holds logging settings.
 type LogConfig struct {
-	Level      string `yaml:"level"`
-	Dir        string `yaml:"dir"`
-	Stdout     bool   `yaml:"stdout"`
-	MaxSize    int    `yaml:"max_size"`
-	MaxBackups int    `yaml:"max_backups"`
-	MaxAge     int    `yaml:"max_age"`
+	Level      string `mapstructure:"level"`
+	Dir        string `mapstructure:"dir"`
+	Stdout     bool   `mapstructure:"stdout"`
+	MaxSize    int    `mapstructure:"max_size"`
+	MaxBackups int    `mapstructure:"max_backups"`
+	MaxAge     int    `mapstructure:"max_age"`
 }
 
-// Load reads a YAML config file and returns a Config.
-func Load(path string) (*Config, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
+func NewConfig(v *viper.Viper) *Config {
+	var cfg Config
+	if err := v.Unmarshal(&cfg); err != nil {
+		panic(err)
 	}
-
-	cfg := &Config{}
-	if err := yaml.Unmarshal(data, cfg); err != nil {
-		return nil, err
-	}
-
-	return cfg, nil
+	return &cfg
 }

@@ -1,0 +1,3 @@
+# Production environment overrides
+log:
+  stdout: false
