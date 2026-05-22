@@ -1,0 +1,28 @@
+name: Question
+description: Ask a question or seek help
+title: "[Question]: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: Ask your question here. Please check existing issues first.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What would you like to know?
+    validations:
+      required: true
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: What I've Tried
+      description: Describe any solutions you've already attempted.
+
+  - type: textarea
+    id: references
+    attributes:
+      label: Related Code / Documentation
+      description: Links to related code, docs, or resources.
