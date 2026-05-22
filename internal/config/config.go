@@ -31,7 +31,8 @@ type DatabaseConfig struct {
 // LogConfig holds logging settings.
 type LogConfig struct {
 	Level      string `yaml:"level"`
-	Filename   string `yaml:"filename"`
+	Dir        string `yaml:"dir"`
+	Stdout     bool   `yaml:"stdout"`
 	MaxSize    int    `yaml:"max_size"`
 	MaxBackups int    `yaml:"max_backups"`
 	MaxAge     int    `yaml:"max_age"`

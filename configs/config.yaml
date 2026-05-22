@@ -11,7 +11,8 @@ database:
 
 log:
   level: "info"
-  filename: "./logs/app.log"
+  dir: "./logs"
+  stdout: true
   max_size: 100       # megabytes
   max_backups: 5
   max_age: 30         # days
