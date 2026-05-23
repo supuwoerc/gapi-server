@@ -1,9 +1,8 @@
 package handler
 
 import (
-	"net/http"
-
 	"gapi-server/pkg/logger"
+	"gapi-server/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,7 +16,5 @@ func NewHealthHandler(logger *logger.Logger) *HealthHandler {
 }
 
 func (h *HealthHandler) Check(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"status": "ok",
-	})
+	response.Success(c)
 }

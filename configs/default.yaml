@@ -38,3 +38,7 @@ redis:
   password: ""                   # Redis 密码
   db: 0                          # Redis 数据库编号
   log_level: 2                   # Redis 日志级别 (1=Silent 2=Error 3=Warn 4=Info)
+
+locale:
+  default_lang: "cn"             # 默认语言 (cn/en)
+  locale_key: "Locale"           # 从 Header 中读取语言的 key

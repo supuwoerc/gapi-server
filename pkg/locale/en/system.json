@@ -1,0 +1,10 @@
+[
+  {"id": "ok", "other": "Success"},
+  {"id": "error", "other": "Failed"},
+  {"id": "invalidParams", "other": "Invalid parameters"},
+  {"id": "invalidToken", "other": "Authentication failed"},
+  {"id": "cancelRequest", "other": "Request canceled"},
+  {"id": "recoveryError", "other": "Internal error, please contact administrator"},
+  {"id": "timeoutErr", "other": "Request timeout"},
+  {"id": "busy", "other": "Too many requests, please try again later"}
+]

@@ -12,6 +12,7 @@ type Config struct {
 	Cors      CorsConfig      `mapstructure:"cors"`       // 跨域配置
 	RateLimit RateLimitConfig `mapstructure:"rate_limit"` // 限流配置
 	Redis     RedisConfig     `mapstructure:"redis"`      // Redis 配置
+	Locale    LocaleConfig    `mapstructure:"locale"`     // 国际化配置
 }
 
 // ServerConfig holds HTTP server settings.
@@ -62,6 +63,12 @@ type RedisConfig struct {
 	Password string `mapstructure:"password"`  // Redis 密码
 	DB       int    `mapstructure:"db"`        // Redis 数据库编号
 	LogLevel int    `mapstructure:"log_level"` // 日志级别 (1=Silent 2=Error 3=Warn 4=Info)
+}
+
+// LocaleConfig holds i18n settings.
+type LocaleConfig struct {
+	DefaultLang string `mapstructure:"default_lang"` // 默认语言 (cn/en)
+	LocaleKey   string `mapstructure:"locale_key"`   // 请求 header key
 }
 
 // NewConfig unmarshals viper config into Config struct.

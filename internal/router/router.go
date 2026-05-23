@@ -32,6 +32,8 @@ func NewEngine(l *logger.Logger, cfg *config.Config, redisClient *redis.Client, 
 	}
 
 	r.Use(middleware.Trace())
+	r.Use(middleware.I18n(&cfg.Locale))
+	r.Use(middleware.Validator(&cfg.Locale))
 	r.Use(middleware.Recovery(l))
 	r.Use(middleware.Logger(l))
 	r.Use(middleware.Cors(&cfg.Cors))

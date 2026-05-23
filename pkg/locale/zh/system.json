@@ -1,0 +1,10 @@
+[
+  {"id": "ok", "other": "操作成功"},
+  {"id": "error", "other": "操作失败"},
+  {"id": "invalidParams", "other": "参数错误"},
+  {"id": "invalidToken", "other": "鉴权失败"},
+  {"id": "cancelRequest", "other": "请求被取消"},
+  {"id": "recoveryError", "other": "严重错误，请联系管理员"},
+  {"id": "timeoutErr", "other": "处理时间过长，操作取消"},
+  {"id": "busy", "other": "请求过于频繁，请稍后再试"}
+]
