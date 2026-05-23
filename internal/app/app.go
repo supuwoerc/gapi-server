@@ -2,6 +2,7 @@ package app
 
 import (
 	"gapi-server/internal/server"
+	"gapi-server/pkg/logger"
 
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
@@ -10,12 +11,12 @@ import (
 
 type App struct {
 	server *server.HttpServer
-	logger *zap.Logger
+	logger *logger.Logger
 	db     *gorm.DB
 	redis  *redis.Client
 }
 
-func NewApp(server *server.HttpServer, logger *zap.Logger, db *gorm.DB, redis *redis.Client) *App {
+func NewApp(server *server.HttpServer, logger *logger.Logger, db *gorm.DB, redis *redis.Client) *App {
 	return &App{server: server, logger: logger, db: db, redis: redis}
 }
 

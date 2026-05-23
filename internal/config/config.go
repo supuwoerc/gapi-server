@@ -58,9 +58,10 @@ type RateLimitConfig struct {
 
 // RedisConfig holds Redis connection settings.
 type RedisConfig struct {
-	Addr     string `mapstructure:"addr"`     // Redis 地址
-	Password string `mapstructure:"password"` // Redis 密码
-	DB       int    `mapstructure:"db"`       // Redis 数据库编号
+	Addr     string `mapstructure:"addr"`      // Redis 地址
+	Password string `mapstructure:"password"`  // Redis 密码
+	DB       int    `mapstructure:"db"`        // Redis 数据库编号
+	LogLevel int    `mapstructure:"log_level"` // 日志级别 (1=Silent 2=Error 3=Warn 4=Info)
 }
 
 // NewConfig unmarshals viper config into Config struct.

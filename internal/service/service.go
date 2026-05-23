@@ -2,17 +2,14 @@ package service
 
 import (
 	"gapi-server/internal/repository"
-
-	"go.uber.org/zap"
+	"gapi-server/pkg/logger"
 )
 
-// Service is the base business logic struct.
 type Service struct {
 	repo   *repository.Repository
-	logger *zap.Logger
+	logger *logger.Logger
 }
 
-// NewService creates a new base Service.
-func NewService(repo *repository.Repository, logger *zap.Logger) *Service {
+func NewService(repo *repository.Repository, logger *logger.Logger) *Service {
 	return &Service{repo: repo, logger: logger}
 }

@@ -9,7 +9,7 @@ import (
 )
 
 var InfraSet = wire.NewSet(
-	logger.NewZapLogger,
+	logger.NewLogger,
 	database.NewConnection,
 	pkgRedis.NewClient,
 )

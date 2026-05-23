@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"gapi-server/internal/config"
+	"gapi-server/pkg/logger"
 
 	"github.com/facebookgo/grace/gracehttp"
 	"go.uber.org/zap"
@@ -19,14 +20,14 @@ var isLinux = false
 
 type HttpServer struct {
 	server  *http.Server
-	logger  *zap.Logger
+	logger  *logger.Logger
 	isLinux bool
 }
 
-func NewHttpServer(cfg *config.ServerConfig, handler http.Handler, logger *zap.Logger) *HttpServer {
+func NewHttpServer(cfg *config.ServerConfig, handler http.Handler, l *logger.Logger) *HttpServer {
 	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 	srv := &http.Server{Addr: addr, Handler: handler}
-	return &HttpServer{server: srv, logger: logger, isLinux: isLinux}
+	return &HttpServer{server: srv, logger: l, isLinux: isLinux}
 }
 
 func (s *HttpServer) Run() {

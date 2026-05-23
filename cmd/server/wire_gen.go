@@ -25,20 +25,20 @@ func WireApp() (*app.App, error) {
 	configConfig := config.NewConfig(viper)
 	serverConfig := provider.ProvideServerConfig(configConfig)
 	logConfig := provider.ProvideLogConfig(configConfig)
-	zapLogger := logger.NewZapLogger(logConfig)
+	loggerLogger := logger.NewLogger(logConfig)
 	redisConfig := provider.ProvideRedisConfig(configConfig)
-	client, err := redis.NewClient(redisConfig)
+	client, err := redis.NewClient(redisConfig, loggerLogger)
 	if err != nil {
 		return nil, err
 	}
-	healthHandler := handler.NewHealthHandler(zapLogger)
-	engine := router.NewEngine(zapLogger, configConfig, client, healthHandler)
-	httpServer := server.NewHttpServer(serverConfig, engine, zapLogger)
+	healthHandler := handler.NewHealthHandler(loggerLogger)
+	engine := router.NewEngine(loggerLogger, configConfig, client, healthHandler)
+	httpServer := server.NewHttpServer(serverConfig, engine, loggerLogger)
 	databaseConfig := provider.ProvideDBConfig(configConfig)
-	db, err := database.NewConnection(databaseConfig, zapLogger)
+	db, err := database.NewConnection(databaseConfig, loggerLogger)
 	if err != nil {
 		return nil, err
 	}
-	appApp := app.NewApp(httpServer, zapLogger, db, client)
+	appApp := app.NewApp(httpServer, loggerLogger, db, client)
 	return appApp, nil
 }

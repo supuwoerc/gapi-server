@@ -5,17 +5,17 @@ import (
 	"time"
 
 	"gapi-server/internal/config"
+	"gapi-server/pkg/logger"
 
-	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
+	gormlogger "gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
 )
 
 const tablePrefix = "sys_"
 
-func NewConnection(cfg *config.DatabaseConfig, zapLogger *zap.Logger) (*gorm.DB, error) {
+func NewConnection(cfg *config.DatabaseConfig, l *logger.Logger) (*gorm.DB, error) {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		cfg.User,
 		cfg.Password,
@@ -24,15 +24,15 @@ func NewConnection(cfg *config.DatabaseConfig, zapLogger *zap.Logger) (*gorm.DB,
 		cfg.DBName,
 	)
 
-	logLevel := logger.LogLevel(cfg.LogLevel)
+	logLevel := gormlogger.LogLevel(cfg.LogLevel)
 	if logLevel == 0 {
-		logLevel = logger.Warn
+		logLevel = gormlogger.Warn
 	}
 	slowThreshold := time.Duration(cfg.SlowThreshold) * time.Millisecond
 	if slowThreshold == 0 {
 		slowThreshold = 200 * time.Millisecond
 	}
-	gormLogger := NewGormLogger(zapLogger, logLevel, slowThreshold)
+	gormLogger := NewGormLogger(l, logLevel, slowThreshold)
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
 		NamingStrategy: schema.NamingStrategy{

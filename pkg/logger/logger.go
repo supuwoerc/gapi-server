@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -14,18 +15,37 @@ import (
 	"gopkg.in/lumberjack.v2"
 )
 
-func NewZapLogger(cfg *config.LogConfig) *zap.Logger {
+type ContextKey string
+
+const TraceIDKey ContextKey = "trace_id"
+
+type Logger struct {
+	*zap.Logger
+}
+
+func NewLogger(cfg *config.LogConfig) *Logger {
 	writeSyncer := getLogWriter(cfg)
 	level := parseLevel(cfg.Level)
 	encoder := getEncoder()
 
 	core := zapcore.NewCore(encoder, writeSyncer, level)
-	return zap.New(
+	z := zap.New(
 		core,
 		zap.AddCaller(),
 		zap.AddStacktrace(zapcore.ErrorLevel),
 		zap.Fields(zap.Int("pid", os.Getpid())),
 	)
+	return &Logger{Logger: z}
+}
+
+func (l *Logger) Ctx(ctx context.Context) *zap.Logger {
+	if ctx == nil {
+		return l.Logger
+	}
+	if traceID, ok := ctx.Value(TraceIDKey).(string); ok && traceID != "" {
+		return l.Logger.With(zap.String(string(TraceIDKey), traceID))
+	}
+	return l.Logger
 }
 
 func getEncoder() zapcore.Encoder {

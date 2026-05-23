@@ -8,79 +8,82 @@ import (
 	"strings"
 	"time"
 
+	"gapi-server/pkg/logger"
+
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
+	gormlogger "gorm.io/gorm/logger"
 	"gorm.io/gorm/utils"
 )
 
 type Logger struct {
-	zap           *zap.Logger
-	level         logger.LogLevel
+	logger        *logger.Logger
+	level         gormlogger.LogLevel
 	slowThreshold time.Duration
 }
 
-func NewGormLogger(zapLogger *zap.Logger, level logger.LogLevel, slowThreshold time.Duration) *Logger {
+func NewGormLogger(l *logger.Logger, level gormlogger.LogLevel, slowThreshold time.Duration) *Logger {
 	return &Logger{
-		zap:           zapLogger,
+		logger:        l,
 		level:         level,
 		slowThreshold: slowThreshold,
 	}
 }
 
-func (l *Logger) LogMode(level logger.LogLevel) logger.Interface {
+func (l *Logger) LogMode(level gormlogger.LogLevel) gormlogger.Interface {
 	newLogger := *l
 	newLogger.level = level
 	return &newLogger
 }
 
-func (l *Logger) Info(_ context.Context, msg string, data ...interface{}) {
-	if l.level >= logger.Info {
-		l.zap.Sugar().Infof(msg, data...)
+func (l *Logger) Info(ctx context.Context, msg string, data ...interface{}) {
+	if l.level >= gormlogger.Info {
+		l.logger.Ctx(ctx).Info(fmt.Sprintf(msg, data...))
 	}
 }
 
-func (l *Logger) Warn(_ context.Context, msg string, data ...interface{}) {
-	if l.level >= logger.Warn {
-		l.zap.Sugar().Warnf(msg, data...)
+func (l *Logger) Warn(ctx context.Context, msg string, data ...interface{}) {
+	if l.level >= gormlogger.Warn {
+		l.logger.Ctx(ctx).Warn(fmt.Sprintf(msg, data...))
 	}
 }
 
-func (l *Logger) Error(_ context.Context, msg string, data ...interface{}) {
-	if l.level >= logger.Error {
-		l.zap.Sugar().Errorf(msg, data...)
+func (l *Logger) Error(ctx context.Context, msg string, data ...interface{}) {
+	if l.level >= gormlogger.Error {
+		l.logger.Ctx(ctx).Error(fmt.Sprintf(msg, data...))
 	}
 }
 
-func (l *Logger) Trace(_ context.Context, begin time.Time, fc func() (sql string, rowsAffected int64), err error) {
-	if l.level <= logger.Silent {
+func (l *Logger) Trace(ctx context.Context, begin time.Time, fc func() (sql string, rowsAffected int64), err error) {
+	if l.level <= gormlogger.Silent {
 		return
 	}
 	elapsed := time.Since(begin)
 	cost := fmt.Sprintf("%.3fms", float64(elapsed.Nanoseconds())/1e6)
 	fileWithLine := utils.FileWithLineNum()
+	log := l.logger.Ctx(ctx)
 
 	switch {
-	case err != nil && l.level >= logger.Error && !errors.Is(err, gorm.ErrRecordNotFound):
+	case err != nil && l.level >= gormlogger.Error && !errors.Is(err, gorm.ErrRecordNotFound):
 		sqlStr, affected := fc()
-		l.zap.Error("gorm",
+		log.Error("gorm",
 			zap.String("pos", fileWithLine),
 			zap.Error(err),
 			zap.String("cost", cost),
 			zap.Int64("rows", affected),
 			zap.String("sql", cleanSQL(sqlStr)),
 		)
-	case elapsed > l.slowThreshold && l.slowThreshold != 0 && l.level >= logger.Warn:
+	case elapsed > l.slowThreshold && l.slowThreshold != 0 && l.level >= gormlogger.Warn:
 		sqlStr, affected := fc()
-		l.zap.Warn("gorm slow",
+		log.Warn("gorm slow",
 			zap.String("pos", fileWithLine),
 			zap.String("cost", cost),
 			zap.Int64("rows", affected),
 			zap.String("sql", cleanSQL(sqlStr)),
 		)
-	case l.level == logger.Info:
+	case l.level == gormlogger.Info:
 		sqlStr, affected := fc()
-		l.zap.Debug("gorm",
+		log.Info("gorm",
 			zap.String("pos", fileWithLine),
 			zap.String("cost", cost),
 			zap.Int64("rows", affected),

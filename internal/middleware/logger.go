@@ -3,12 +3,13 @@ package middleware
 import (
 	"time"
 
+	"gapi-server/pkg/logger"
+
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
-// Logger returns a gin middleware that logs requests using zap.
-func Logger(logger *zap.Logger) gin.HandlerFunc {
+func Logger(l *logger.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 		path := c.Request.URL.Path
@@ -19,7 +20,7 @@ func Logger(logger *zap.Logger) gin.HandlerFunc {
 		latency := time.Since(start)
 		status := c.Writer.Status()
 
-		logger.Info("request",
+		l.Ctx(c.Request.Context()).Info("request",
 			zap.Int("status", status),
 			zap.String("method", c.Request.Method),
 			zap.String("path", path),
