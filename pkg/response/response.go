@@ -26,6 +26,9 @@ type BasicResponse[T any] struct {
 	Message string `json:"message"`
 }
 
+// Response is the standard API response type for swagger documentation.
+type Response = BasicResponse[any]
+
 func HttpResponse[T any](ctx *gin.Context, code StatusCode, data T, message *string) {
 	var msg string
 	if message != nil {

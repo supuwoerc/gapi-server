@@ -9,7 +9,7 @@ GO_LDFLAGS  := -s -w \
 	-X 'main.AppEnv=$(APP_ENV)' \
 	-X 'main.GinMode=$(GIN_MODE)'
 
-.PHONY: build run clean docker wire
+.PHONY: build run clean docker wire swagger
 
 build:
 	CGO_ENABLED=0 go build -ldflags "$(GO_LDFLAGS)" -o bin/$(APP_NAME) ./cmd/server
@@ -29,3 +29,6 @@ docker:
 
 wire:
 	wire ./cmd/server/
+
+swagger:
+	swag init -d ./cmd/server -g main.go -o docs/ --parseDependency

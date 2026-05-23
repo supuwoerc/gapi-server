@@ -9,13 +9,17 @@ package main
 import (
 	"github.com/supuwoerc/gapi-server/internal/app"
 	"github.com/supuwoerc/gapi-server/internal/config"
-	"github.com/supuwoerc/gapi-server/internal/handler"
+	"github.com/supuwoerc/gapi-server/internal/handler/v1"
 	"github.com/supuwoerc/gapi-server/internal/provider"
 	"github.com/supuwoerc/gapi-server/internal/router"
 	"github.com/supuwoerc/gapi-server/internal/server"
 	"github.com/supuwoerc/gapi-server/pkg/database"
 	"github.com/supuwoerc/gapi-server/pkg/logger"
 	"github.com/supuwoerc/gapi-server/pkg/redis"
+)
+
+import (
+	_ "github.com/supuwoerc/gapi-server/docs"
 )
 
 // Injectors from wire.go:
@@ -31,8 +35,10 @@ func WireApp() (*app.App, error) {
 	if err != nil {
 		return nil, err
 	}
-	healthHandler := handler.NewHealthHandler(loggerLogger)
-	engine := router.NewEngine(loggerLogger, configConfig, client, healthHandler)
+	healthHandler := v1.NewHealthHandler(loggerLogger)
+	v := provider.ProvideV1Registrars(healthHandler)
+	v1Handlers := router.NewV1Handlers(v)
+	engine := router.NewEngine(loggerLogger, configConfig, client, v1Handlers)
 	httpServer := server.NewHttpServer(serverConfig, engine, loggerLogger)
 	databaseConfig := provider.ProvideDBConfig(configConfig)
 	db, err := database.NewConnection(databaseConfig, loggerLogger)

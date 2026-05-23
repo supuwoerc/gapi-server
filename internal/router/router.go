@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/supuwoerc/gapi-server/internal/config"
-	"github.com/supuwoerc/gapi-server/internal/handler"
 	"github.com/supuwoerc/gapi-server/internal/middleware"
 	"github.com/supuwoerc/gapi-server/pkg/logger"
 
@@ -13,7 +12,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewEngine(l *logger.Logger, cfg *config.Config, redisClient *redis.Client, healthHandler *handler.HealthHandler) *gin.Engine {
+func NewEngine(l *logger.Logger, cfg *config.Config, redisClient *redis.Client, h *V1Handlers) *gin.Engine {
 	gin.DebugPrintFunc = func(format string, values ...interface{}) {
 		l.Debug(fmt.Sprintf(format, values...))
 	}
@@ -39,9 +38,10 @@ func NewEngine(l *logger.Logger, cfg *config.Config, redisClient *redis.Client, 
 	r.Use(middleware.Cors(&cfg.Cors))
 	r.Use(middleware.RateLimit(&cfg.RateLimit, redisClient))
 
-	r.GET("/health", healthHandler.Check)
+	v1Route := r.Group("/api/v1")
 
-	_ = r.Group("/api/v1")
+	h.Register(v1Route)
+	initSwagger(v1Route, cfg.Env)
 
 	return r
 }

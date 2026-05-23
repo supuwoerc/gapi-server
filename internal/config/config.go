@@ -1,6 +1,8 @@
 package config
 
 import (
+	"os"
+
 	"github.com/spf13/viper"
 )
 
@@ -13,6 +15,7 @@ type Config struct {
 	RateLimit RateLimitConfig `mapstructure:"rate_limit"` // 限流配置
 	Redis     RedisConfig     `mapstructure:"redis"`      // Redis 配置
 	Locale    LocaleConfig    `mapstructure:"locale"`     // 国际化配置
+	Env       string          `mapstructure:"-"`          // 运行环境 (dev/prod/test)
 }
 
 // ServerConfig holds HTTP server settings.
@@ -77,6 +80,10 @@ func NewConfig(v *viper.Viper) *Config {
 	var cfg Config
 	if err := v.Unmarshal(&cfg); err != nil {
 		panic(err)
+	}
+	cfg.Env = os.Getenv("APP_ENV")
+	if cfg.Env == "" {
+		cfg.Env = "dev"
 	}
 	return &cfg
 }

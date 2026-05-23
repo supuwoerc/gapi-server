@@ -1,3 +1,8 @@
+// @title           GAPI Server
+// @version         1.0
+// @description     通用 API 服务
+// @host            localhost:8080
+
 package main
 
 import (
@@ -5,6 +10,8 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+
+	_ "github.com/supuwoerc/gapi-server/docs"
 )
 
 var (
