@@ -38,6 +38,7 @@ redis:
   password: ""                   # Redis 密码
   db: 0                          # Redis 数据库编号
   log_level: 2                   # Redis 日志级别 (1=Silent 2=Error 3=Warn 4=Info)
+  maint_notifications: "auto"    # maint_notifications 模式 (disabled/enabled/auto)
 
 locale:
   default_lang: "cn"             # 默认语言 (cn/en)

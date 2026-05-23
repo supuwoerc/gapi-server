@@ -59,10 +59,11 @@ type RateLimitConfig struct {
 
 // RedisConfig holds Redis connection settings.
 type RedisConfig struct {
-	Addr     string `mapstructure:"addr"`      // Redis 地址
-	Password string `mapstructure:"password"`  // Redis 密码
-	DB       int    `mapstructure:"db"`        // Redis 数据库编号
-	LogLevel int    `mapstructure:"log_level"` // 日志级别 (1=Silent 2=Error 3=Warn 4=Info)
+	Addr               string `mapstructure:"addr"`                // Redis 地址
+	Password           string `mapstructure:"password"`            // Redis 密码
+	DB                 int    `mapstructure:"db"`                  // Redis 数据库编号
+	LogLevel           int    `mapstructure:"log_level"`           // 日志级别 (1=Silent 2=Error 3=Warn 4=Info)
+	MaintNotifications string `mapstructure:"maint_notifications"` // maint_notifications 模式 (disabled/enabled/auto)
 }
 
 // LocaleConfig holds i18n settings.

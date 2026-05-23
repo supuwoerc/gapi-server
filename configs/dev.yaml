@@ -1,1 +1,4 @@
 # 开发环境覆盖配置 - 通过 APP_ENV=dev 或默认激活
+
+redis:
+  maint_notifications: "disabled" # 开发环境 Redis 版本较低，禁用 maint_notifications
