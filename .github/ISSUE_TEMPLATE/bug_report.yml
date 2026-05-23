@@ -45,13 +45,15 @@ body:
       required: true
 
   - type: dropdown
-    id: environment
+    id: platform
     attributes:
-      label: Environment
+      label: Platform
       options:
-        - Development
-        - Test
-        - Production
+        - Linux
+        - macOS
+        - Windows
+        - Docker
+        - Other
     validations:
       required: true
 
