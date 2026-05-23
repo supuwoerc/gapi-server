@@ -31,6 +31,7 @@ func NewEngine(l *logger.Logger, cfg *config.Config, redisClient *redis.Client, 
 		r.MaxMultipartMemory = cfg.Server.MaxMultipartMemory << 20
 	}
 
+	r.Use(middleware.Trace())
 	r.Use(middleware.Recovery(l))
 	r.Use(middleware.Logger(l))
 	r.Use(middleware.Cors(&cfg.Cors))
