@@ -115,7 +115,7 @@ func buildArgs(cmd redis.Cmder) string {
 		if i > 1 {
 			b.WriteString(" ")
 		}
-		fmt.Fprintf(&b, "%v", args[i])
+		_, _ = fmt.Fprintf(&b, "%v", args[i])
 	}
 	return b.String()
 }
