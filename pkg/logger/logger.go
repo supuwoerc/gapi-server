@@ -24,11 +24,16 @@ type Logger struct {
 }
 
 func NewLogger(cfg *config.LogConfig) *Logger {
-	writeSyncer := getLogWriter(cfg)
 	level := parseLevel(cfg.Level)
-	encoder := getEncoder()
-
-	core := zapcore.NewCore(encoder, writeSyncer, level)
+	cores := []zapcore.Core{
+		zapcore.NewCore(getJSONEncoder(), getFileSyncer(cfg), level),
+	}
+	if cfg.Stdout {
+		cores = append(cores,
+			zapcore.NewCore(getConsoleEncoder(), zapcore.AddSync(os.Stdout), level),
+		)
+	}
+	core := zapcore.NewTee(cores...)
 	z := zap.New(
 		core,
 		zap.AddCaller(),
@@ -48,17 +53,29 @@ func (l *Logger) Ctx(ctx context.Context) *zap.Logger {
 	return l.Logger
 }
 
-func getEncoder() zapcore.Encoder {
+func getJSONEncoder() zapcore.Encoder {
 	encoderConfig := zap.NewProductionEncoderConfig()
 	encoderConfig.TimeKey = "time"
 	encoderConfig.EncodeTime = func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 		enc.AppendString(t.Local().Format(time.DateTime))
 	}
 	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+	encoderConfig.EncodeCaller = zapcore.FullCallerEncoder
 	return zapcore.NewJSONEncoder(encoderConfig)
 }
 
-func getLogWriter(cfg *config.LogConfig) zapcore.WriteSyncer {
+func getConsoleEncoder() zapcore.Encoder {
+	encoderConfig := zap.NewDevelopmentEncoderConfig()
+	encoderConfig.TimeKey = "time"
+	encoderConfig.EncodeTime = func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+		enc.AppendString(t.Local().Format(time.DateTime))
+	}
+	encoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	encoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
+	return zapcore.NewConsoleEncoder(encoderConfig)
+}
+
+func getFileSyncer(cfg *config.LogConfig) zapcore.WriteSyncer {
 	dir := strings.TrimSpace(cfg.Dir)
 	if dir == "" {
 		projectDir, err := os.Getwd()
@@ -76,12 +93,7 @@ func getLogWriter(cfg *config.LogConfig) zapcore.WriteSyncer {
 		MaxAge:     cfg.MaxAge,
 		Compress:   true,
 	}
-
-	ws := []zapcore.WriteSyncer{zapcore.AddSync(lj)}
-	if cfg.Stdout {
-		ws = append(ws, zapcore.AddSync(os.Stdout))
-	}
-	return zapcore.NewMultiWriteSyncer(ws...)
+	return zapcore.AddSync(lj)
 }
 
 func parseLevel(level string) zapcore.Level {
