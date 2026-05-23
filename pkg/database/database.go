@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"gapi-server/internal/config"
-	"gapi-server/pkg/logger"
+	"github.com/supuwoerc/gapi-server/internal/config"
+	"github.com/supuwoerc/gapi-server/pkg/logger"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"

@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"gapi-server/internal/config"
-	"gapi-server/pkg/response"
+	"github.com/supuwoerc/gapi-server/internal/config"
+	"github.com/supuwoerc/gapi-server/pkg/response"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"

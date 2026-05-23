@@ -3,7 +3,7 @@ package middleware
 import (
 	"time"
 
-	"gapi-server/pkg/logger"
+	"github.com/supuwoerc/gapi-server/pkg/logger"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"

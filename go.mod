@@ -1,4 +1,4 @@
-module gapi-server
+module github.com/supuwoerc/gapi-server
 
 go 1.26.1
 

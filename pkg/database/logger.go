@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"gapi-server/pkg/logger"
+	"github.com/supuwoerc/gapi-server/pkg/logger"
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"

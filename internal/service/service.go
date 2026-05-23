@@ -1,8 +1,8 @@
 package service
 
 import (
-	"gapi-server/internal/repository"
-	"gapi-server/pkg/logger"
+	"github.com/supuwoerc/gapi-server/internal/repository"
+	"github.com/supuwoerc/gapi-server/pkg/logger"
 )
 
 type Service struct {

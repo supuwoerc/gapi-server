@@ -47,3 +47,4 @@ configs/config.local.yaml
 .roo/
 .sisyphus/
 /.opencode-router/
+/.claude/

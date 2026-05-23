@@ -4,8 +4,8 @@
 package main
 
 import (
-	"gapi-server/internal/app"
-	"gapi-server/internal/provider"
+	"github.com/supuwoerc/gapi-server/internal/app"
+	"github.com/supuwoerc/gapi-server/internal/provider"
 
 	"github.com/google/wire"
 )

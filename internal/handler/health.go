@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"gapi-server/pkg/logger"
-	"gapi-server/pkg/response"
+	"github.com/supuwoerc/gapi-server/pkg/logger"
+	"github.com/supuwoerc/gapi-server/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )

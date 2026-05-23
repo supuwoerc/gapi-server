@@ -1,7 +1,7 @@
 package provider
 
 import (
-	"gapi-server/internal/config"
+	"github.com/supuwoerc/gapi-server/internal/config"
 
 	"github.com/google/wire"
 )

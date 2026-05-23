@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"gapi-server/internal/config"
-	"gapi-server/pkg/logger"
+	"github.com/supuwoerc/gapi-server/internal/config"
+	"github.com/supuwoerc/gapi-server/pkg/logger"
 
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"

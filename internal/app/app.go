@@ -1,8 +1,8 @@
 package app
 
 import (
-	"gapi-server/internal/server"
-	"gapi-server/pkg/logger"
+	"github.com/supuwoerc/gapi-server/internal/server"
+	"github.com/supuwoerc/gapi-server/pkg/logger"
 
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"

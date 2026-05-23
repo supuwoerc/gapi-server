@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"gapi-server/internal/config"
+	"github.com/supuwoerc/gapi-server/internal/config"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"

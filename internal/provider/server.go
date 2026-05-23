@@ -3,8 +3,8 @@ package provider
 import (
 	"net/http"
 
-	"gapi-server/internal/router"
-	"gapi-server/internal/server"
+	"github.com/supuwoerc/gapi-server/internal/router"
+	"github.com/supuwoerc/gapi-server/internal/server"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/wire"

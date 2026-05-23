@@ -3,10 +3,10 @@ package router
 import (
 	"fmt"
 
-	"gapi-server/internal/config"
-	"gapi-server/internal/handler"
-	"gapi-server/internal/middleware"
-	"gapi-server/pkg/logger"
+	"github.com/supuwoerc/gapi-server/internal/config"
+	"github.com/supuwoerc/gapi-server/internal/handler"
+	"github.com/supuwoerc/gapi-server/internal/middleware"
+	"github.com/supuwoerc/gapi-server/pkg/logger"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"

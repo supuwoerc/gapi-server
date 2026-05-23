@@ -1,9 +1,9 @@
 package provider
 
 import (
-	"gapi-server/pkg/database"
-	"gapi-server/pkg/logger"
-	pkgRedis "gapi-server/pkg/redis"
+	"github.com/supuwoerc/gapi-server/pkg/database"
+	"github.com/supuwoerc/gapi-server/pkg/logger"
+	pkgRedis "github.com/supuwoerc/gapi-server/pkg/redis"
 
 	"github.com/google/wire"
 )

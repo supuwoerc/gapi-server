@@ -7,15 +7,15 @@
 package main
 
 import (
-	"gapi-server/internal/app"
-	"gapi-server/internal/config"
-	"gapi-server/internal/handler"
-	"gapi-server/internal/provider"
-	"gapi-server/internal/router"
-	"gapi-server/internal/server"
-	"gapi-server/pkg/database"
-	"gapi-server/pkg/logger"
-	"gapi-server/pkg/redis"
+	"github.com/supuwoerc/gapi-server/internal/app"
+	"github.com/supuwoerc/gapi-server/internal/config"
+	"github.com/supuwoerc/gapi-server/internal/handler"
+	"github.com/supuwoerc/gapi-server/internal/provider"
+	"github.com/supuwoerc/gapi-server/internal/router"
+	"github.com/supuwoerc/gapi-server/internal/server"
+	"github.com/supuwoerc/gapi-server/pkg/database"
+	"github.com/supuwoerc/gapi-server/pkg/logger"
+	"github.com/supuwoerc/gapi-server/pkg/redis"
 )
 
 // Injectors from wire.go:

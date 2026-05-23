@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"gapi-server/internal/config"
+	"github.com/supuwoerc/gapi-server/internal/config"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"

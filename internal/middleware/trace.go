@@ -5,7 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 
-	"gapi-server/pkg/logger"
+	"github.com/supuwoerc/gapi-server/pkg/logger"
 
 	"github.com/gin-gonic/gin"
 )
