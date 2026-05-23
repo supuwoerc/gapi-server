@@ -3,6 +3,7 @@
 server:
   host: "0.0.0.0"             # 监听地址
   port: 8080                  # 监听端口
+  max_multipart_memory: 32    # 文件上传内存限制 (MB)
 
 database:
   host: "127.0.0.1"           # 数据库主机地址
@@ -23,3 +24,16 @@ log:
   max_size: 100               # 单个日志文件最大大小 (MB)
   max_backups: 5              # 保留的旧日志文件最大数量
   max_age: 30                 # 保留的旧日志文件最大天数
+
+cors:
+  origin_prefixes:               # 允许的 Origin 前缀
+    - "http://localhost"
+
+rate_limit:
+  pattern: "100-M"               # 限流模式 (100次/分钟)
+  prefix: "gapi_limiter"         # Redis key 前缀
+
+redis:
+  addr: "127.0.0.1:6379"         # Redis 地址
+  password: ""                   # Redis 密码
+  db: 0                          # Redis 数据库编号

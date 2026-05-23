@@ -12,6 +12,9 @@ var ConfigSet = wire.NewSet(
 	ProvideLogConfig,
 	ProvideDBConfig,
 	ProvideServerConfig,
+	ProvideRedisConfig,
+	ProvideCorsConfig,
+	ProvideRateLimitConfig,
 )
 
 func ProvideLogConfig(cfg *config.Config) *config.LogConfig {
@@ -24,4 +27,16 @@ func ProvideDBConfig(cfg *config.Config) *config.DatabaseConfig {
 
 func ProvideServerConfig(cfg *config.Config) *config.ServerConfig {
 	return &cfg.Server
+}
+
+func ProvideRedisConfig(cfg *config.Config) *config.RedisConfig {
+	return &cfg.Redis
+}
+
+func ProvideCorsConfig(cfg *config.Config) *config.CorsConfig {
+	return &cfg.Cors
+}
+
+func ProvideRateLimitConfig(cfg *config.Config) *config.RateLimitConfig {
+	return &cfg.RateLimit
 }

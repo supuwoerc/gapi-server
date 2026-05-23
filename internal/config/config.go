@@ -6,15 +6,19 @@ import (
 
 // Config holds all configuration sections.
 type Config struct {
-	Server   ServerConfig   `mapstructure:"server"`   // HTTP 服务配置
-	Database DatabaseConfig `mapstructure:"database"` // 数据库配置
-	Log      LogConfig      `mapstructure:"log"`      // 日志配置
+	Server    ServerConfig    `mapstructure:"server"`     // HTTP 服务配置
+	Database  DatabaseConfig  `mapstructure:"database"`   // 数据库配置
+	Log       LogConfig       `mapstructure:"log"`        // 日志配置
+	Cors      CorsConfig      `mapstructure:"cors"`       // 跨域配置
+	RateLimit RateLimitConfig `mapstructure:"rate_limit"` // 限流配置
+	Redis     RedisConfig     `mapstructure:"redis"`      // Redis 配置
 }
 
 // ServerConfig holds HTTP server settings.
 type ServerConfig struct {
-	Host string `mapstructure:"host"` // 监听地址
-	Port int    `mapstructure:"port"` // 监听端口
+	Host               string `mapstructure:"host"`                 // 监听地址
+	Port               int    `mapstructure:"port"`                 // 监听端口
+	MaxMultipartMemory int64  `mapstructure:"max_multipart_memory"` // 文件上传内存限制 (MB)
 }
 
 // DatabaseConfig holds MySQL connection and pool settings.
@@ -39,6 +43,24 @@ type LogConfig struct {
 	MaxSize    int    `mapstructure:"max_size"`    // 单个日志文件最大大小 (MB)
 	MaxBackups int    `mapstructure:"max_backups"` // 保留的旧日志文件最大数量
 	MaxAge     int    `mapstructure:"max_age"`     // 保留的旧日志文件最大天数
+}
+
+// CorsConfig holds CORS settings.
+type CorsConfig struct {
+	OriginPrefixes []string `mapstructure:"origin_prefixes"` // 允许的 Origin 前缀列表
+}
+
+// RateLimitConfig holds rate limiting settings.
+type RateLimitConfig struct {
+	Pattern string `mapstructure:"pattern"` // 限流模式 (如 "100-M" = 100次/分钟)
+	Prefix  string `mapstructure:"prefix"`  // Redis key 前缀
+}
+
+// RedisConfig holds Redis connection settings.
+type RedisConfig struct {
+	Addr     string `mapstructure:"addr"`     // Redis 地址
+	Password string `mapstructure:"password"` // Redis 密码
+	DB       int    `mapstructure:"db"`       // Redis 数据库编号
 }
 
 // NewConfig unmarshals viper config into Config struct.

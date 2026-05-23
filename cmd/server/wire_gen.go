@@ -15,6 +15,7 @@ import (
 	"gapi-server/internal/server"
 	"gapi-server/pkg/database"
 	"gapi-server/pkg/logger"
+	"gapi-server/pkg/redis"
 )
 
 // Injectors from wire.go:
@@ -25,14 +26,19 @@ func WireApp() (*app.App, error) {
 	serverConfig := provider.ProvideServerConfig(configConfig)
 	logConfig := provider.ProvideLogConfig(configConfig)
 	zapLogger := logger.NewZapLogger(logConfig)
+	redisConfig := provider.ProvideRedisConfig(configConfig)
+	client, err := redis.NewClient(redisConfig)
+	if err != nil {
+		return nil, err
+	}
 	healthHandler := handler.NewHealthHandler(zapLogger)
-	engine := router.NewEngine(zapLogger, healthHandler)
+	engine := router.NewEngine(zapLogger, configConfig, client, healthHandler)
 	httpServer := server.NewHttpServer(serverConfig, engine, zapLogger)
 	databaseConfig := provider.ProvideDBConfig(configConfig)
 	db, err := database.NewConnection(databaseConfig, zapLogger)
 	if err != nil {
 		return nil, err
 	}
-	appApp := app.NewApp(httpServer, zapLogger, db)
+	appApp := app.NewApp(httpServer, zapLogger, db, client)
 	return appApp, nil
 }
