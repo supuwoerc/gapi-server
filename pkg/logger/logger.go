@@ -61,6 +61,7 @@ func getJSONEncoder() zapcore.Encoder {
 	}
 	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
 	encoderConfig.EncodeCaller = zapcore.FullCallerEncoder
+	encoderConfig.EncodeDuration = zapcore.StringDurationEncoder
 	return zapcore.NewJSONEncoder(encoderConfig)
 }
 
@@ -72,6 +73,7 @@ func getConsoleEncoder() zapcore.Encoder {
 	}
 	encoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	encoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
+	encoderConfig.EncodeDuration = zapcore.StringDurationEncoder
 	return zapcore.NewConsoleEncoder(encoderConfig)
 }
 

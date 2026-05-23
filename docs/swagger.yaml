@@ -1,8 +1,30 @@
+definitions:
+  response.Response:
+    properties:
+      code:
+        type: integer
+      data: {}
+      message:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
   description: 通用 API 服务
   title: GAPI Server
   version: "1.0"
-paths: {}
+paths:
+  /api/v1/health:
+    get:
+      description: 返回服务运行状态
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 健康检查
+      tags:
+      - 系统
 swagger: "2.0"

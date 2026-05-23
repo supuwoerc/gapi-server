@@ -31,4 +31,4 @@ wire:
 	wire ./cmd/server/
 
 swagger:
-	swag init -d ./cmd/server -g main.go -o docs/ --parseDependency
+	swag init -d ./cmd/server,./internal/handler/v1,./pkg/response -g main.go -o docs/ --parseDependency
