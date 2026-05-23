@@ -28,7 +28,7 @@ func NewConnection(cfg *config.DatabaseConfig, zapLogger *zap.Logger) (*gorm.DB,
 	if logLevel == 0 {
 		logLevel = logger.Warn
 	}
-	slowThreshold := cfg.SlowThreshold
+	slowThreshold := time.Duration(cfg.SlowThreshold) * time.Millisecond
 	if slowThreshold == 0 {
 		slowThreshold = 200 * time.Millisecond
 	}
@@ -58,7 +58,7 @@ func NewConnection(cfg *config.DatabaseConfig, zapLogger *zap.Logger) (*gorm.DB,
 	if maxOpenConns == 0 {
 		maxOpenConns = 100
 	}
-	connMaxLifetime := cfg.ConnMaxLifetime
+	connMaxLifetime := time.Duration(cfg.ConnMaxLifetime) * time.Second
 	if connMaxLifetime == 0 {
 		connMaxLifetime = time.Hour
 	}
