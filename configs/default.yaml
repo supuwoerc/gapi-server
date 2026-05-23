@@ -8,6 +8,11 @@ database:
   user: "root"
   password: "root"
   dbname: "gapi"
+  max_idle_conns: 10
+  max_open_conns: 100
+  conn_max_lifetime: 3600000000000  # 1h in nanoseconds
+  slow_threshold: 200000000         # 200ms in nanoseconds
+  log_level: 2                      # 1=Silent 2=Error 3=Warn 4=Info
 
 log:
   level: "info"

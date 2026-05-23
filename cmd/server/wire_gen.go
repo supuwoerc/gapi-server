@@ -29,7 +29,7 @@ func WireApp() (*app.App, error) {
 	engine := router.NewEngine(zapLogger, healthHandler)
 	httpServer := server.NewHttpServer(serverConfig, engine, zapLogger)
 	databaseConfig := provider.ProvideDBConfig(configConfig)
-	db, err := database.NewConnection(databaseConfig)
+	db, err := database.NewConnection(databaseConfig, zapLogger)
 	if err != nil {
 		return nil, err
 	}
