@@ -15,6 +15,210 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/v1/cron-jobs": {
+            "get": {
+                "description": "返回所有已注册的定时任务及其状态",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "定时任务"
+                ],
+                "summary": "列出所有定时任务",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.BasicResponse-resp_CronJobListResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/cron-jobs/{name}": {
+            "get": {
+                "description": "根据名称获取定时任务详情",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "定时任务"
+                ],
+                "summary": "获取定时任务详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "任务名称",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.BasicResponse-resp_CronJobDetailResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/cron-jobs/{name}/enabled": {
+            "put": {
+                "description": "修改定时任务的启用状态",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "定时任务"
+                ],
+                "summary": "启用/禁用定时任务",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "任务名称",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "启用状态",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/req.CronJobSetEnabledRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/cron-jobs/{name}/executions": {
+            "get": {
+                "description": "分页查看指定任务的执行记录",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "定时任务"
+                ],
+                "summary": "查看定时任务执行历史",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "任务名称",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.BasicResponse-resp_CronJobListExecutionsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/cron-jobs/{name}/trigger": {
+            "post": {
+                "description": "立即执行一次指定的定时任务",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "定时任务"
+                ],
+                "summary": "手动触发定时任务",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "任务名称",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/health": {
             "get": {
                 "description": "返回服务运行状态",
@@ -37,6 +241,197 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "model.CronJob": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "deleted_at": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "interval": {
+                    "type": "string"
+                },
+                "last_run_at": {
+                    "type": "string"
+                },
+                "last_status": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.CronJobExecution": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "deleted_at": {
+                    "type": "integer"
+                },
+                "duration": {
+                    "type": "integer"
+                },
+                "ended_at": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "job_name": {
+                    "type": "string"
+                },
+                "started_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "triggered_by": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "req.CronJobSetEnabledRequest": {
+            "type": "object",
+            "required": [
+                "enabled"
+            ],
+            "properties": {
+                "enabled": {
+                    "description": "是否启用",
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "resp.CronJobDetailResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "deleted_at": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "interval": {
+                    "type": "string"
+                },
+                "last_run_at": {
+                    "type": "string"
+                },
+                "last_status": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "resp.CronJobListExecutionsResponse": {
+            "type": "object",
+            "properties": {
+                "executions": {
+                    "description": "执行记录列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CronJobExecution"
+                    }
+                },
+                "total": {
+                    "description": "总数",
+                    "type": "integer"
+                }
+            }
+        },
+        "resp.CronJobListResponse": {
+            "type": "object",
+            "properties": {
+                "jobs": {
+                    "description": "任务列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CronJob"
+                    }
+                }
+            }
+        },
+        "response.BasicResponse-resp_CronJobDetailResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/resp.CronJobDetailResponse"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.BasicResponse-resp_CronJobListExecutionsResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/resp.CronJobListExecutionsResponse"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.BasicResponse-resp_CronJobListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/resp.CronJobListResponse"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "response.Response": {
             "type": "object",
             "properties": {

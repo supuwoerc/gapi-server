@@ -1,4 +1,130 @@
 definitions:
+  model.CronJob:
+    properties:
+      created_at:
+        type: string
+      deleted_at:
+        type: integer
+      description:
+        type: string
+      enabled:
+        type: boolean
+      id:
+        type: integer
+      interval:
+        type: string
+      last_run_at:
+        type: string
+      last_status:
+        type: string
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  model.CronJobExecution:
+    properties:
+      created_at:
+        type: string
+      deleted_at:
+        type: integer
+      duration:
+        type: integer
+      ended_at:
+        type: string
+      error:
+        type: string
+      id:
+        type: integer
+      job_name:
+        type: string
+      started_at:
+        type: string
+      status:
+        type: string
+      triggered_by:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  req.CronJobSetEnabledRequest:
+    properties:
+      enabled:
+        description: 是否启用
+        example: true
+        type: boolean
+    required:
+    - enabled
+    type: object
+  resp.CronJobDetailResponse:
+    properties:
+      created_at:
+        type: string
+      deleted_at:
+        type: integer
+      description:
+        type: string
+      enabled:
+        type: boolean
+      id:
+        type: integer
+      interval:
+        type: string
+      last_run_at:
+        type: string
+      last_status:
+        type: string
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  resp.CronJobListExecutionsResponse:
+    properties:
+      executions:
+        description: 执行记录列表
+        items:
+          $ref: '#/definitions/model.CronJobExecution'
+        type: array
+      total:
+        description: 总数
+        type: integer
+    type: object
+  resp.CronJobListResponse:
+    properties:
+      jobs:
+        description: 任务列表
+        items:
+          $ref: '#/definitions/model.CronJob'
+        type: array
+    type: object
+  response.BasicResponse-resp_CronJobDetailResponse:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/resp.CronJobDetailResponse'
+      message:
+        type: string
+    type: object
+  response.BasicResponse-resp_CronJobListExecutionsResponse:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/resp.CronJobListExecutionsResponse'
+      message:
+        type: string
+    type: object
+  response.BasicResponse-resp_CronJobListResponse:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/resp.CronJobListResponse'
+      message:
+        type: string
+    type: object
   response.Response:
     properties:
       code:
@@ -14,6 +140,141 @@ info:
   title: GAPI Server
   version: "1.0"
 paths:
+  /api/v1/cron-jobs:
+    get:
+      description: 返回所有已注册的定时任务及其状态
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BasicResponse-resp_CronJobListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 列出所有定时任务
+      tags:
+      - 定时任务
+  /api/v1/cron-jobs/{name}:
+    get:
+      description: 根据名称获取定时任务详情
+      parameters:
+      - description: 任务名称
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BasicResponse-resp_CronJobDetailResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取定时任务详情
+      tags:
+      - 定时任务
+  /api/v1/cron-jobs/{name}/enabled:
+    put:
+      consumes:
+      - application/json
+      description: 修改定时任务的启用状态
+      parameters:
+      - description: 任务名称
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: 启用状态
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/req.CronJobSetEnabledRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 启用/禁用定时任务
+      tags:
+      - 定时任务
+  /api/v1/cron-jobs/{name}/executions:
+    get:
+      description: 分页查看指定任务的执行记录
+      parameters:
+      - description: 任务名称
+        in: path
+        name: name
+        required: true
+        type: string
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.BasicResponse-resp_CronJobListExecutionsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 查看定时任务执行历史
+      tags:
+      - 定时任务
+  /api/v1/cron-jobs/{name}/trigger:
+    post:
+      description: 立即执行一次指定的定时任务
+      parameters:
+      - description: 任务名称
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 手动触发定时任务
+      tags:
+      - 定时任务
   /api/v1/health:
     get:
       description: 返回服务运行状态

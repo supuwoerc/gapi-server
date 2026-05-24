@@ -1,9 +1,9 @@
 package v1
 
 import (
-	"strconv"
-
 	"github.com/supuwoerc/gapi-server/internal/cronjob"
+	"github.com/supuwoerc/gapi-server/internal/handler/v1/req"
+	"github.com/supuwoerc/gapi-server/internal/handler/v1/resp"
 	"github.com/supuwoerc/gapi-server/internal/service"
 	"github.com/supuwoerc/gapi-server/pkg/response"
 
@@ -32,16 +32,13 @@ func (h *CronJobHandler) Register(r *gin.RouterGroup) {
 	}
 }
 
-type setEnabledRequest struct {
-	Enabled *bool `json:"enabled" binding:"required"`
-}
-
 // List
 // @Summary      列出所有定时任务
 // @Description  返回所有已注册的定时任务及其状态
 // @Tags         定时任务
 // @Produce      json
-// @Success      200  {object}  response.Response
+// @Success      200  {object}  response.BasicResponse[resp.CronJobListResponse]
+// @Failure      500  {object}  response.Response
 // @Router       /api/v1/cron-jobs [get]
 func (h *CronJobHandler) List(c *gin.Context) {
 	jobs, err := h.service.ListJobs(c.Request.Context())
@@ -49,7 +46,7 @@ func (h *CronJobHandler) List(c *gin.Context) {
 		response.FailWithError(c, err)
 		return
 	}
-	response.SuccessWithData(c, jobs)
+	response.SuccessWithData(c, resp.CronJobListResponse{Jobs: jobs})
 }
 
 // Get
@@ -58,16 +55,21 @@ func (h *CronJobHandler) List(c *gin.Context) {
 // @Tags         定时任务
 // @Produce      json
 // @Param        name  path  string  true  "任务名称"
-// @Success      200  {object}  response.Response
+// @Success      200  {object}  response.BasicResponse[resp.CronJobDetailResponse]
+// @Failure      500  {object}  response.Response
 // @Router       /api/v1/cron-jobs/{name} [get]
 func (h *CronJobHandler) Get(c *gin.Context) {
-	name := c.Param("name")
-	job, err := h.service.GetJob(c.Request.Context(), name)
+	var uri req.CronJobUriRequest
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ParamsValidateFail(c, err)
+		return
+	}
+	job, err := h.service.GetJob(c.Request.Context(), uri.Name)
 	if err != nil {
 		response.FailWithError(c, err)
 		return
 	}
-	response.SuccessWithData(c, job)
+	response.SuccessWithData(c, resp.CronJobDetailResponse{CronJob: job})
 }
 
 // SetEnabled
@@ -76,29 +78,35 @@ func (h *CronJobHandler) Get(c *gin.Context) {
 // @Tags         定时任务
 // @Accept       json
 // @Produce      json
-// @Param        name  path  string  true  "任务名称"
-// @Param        body  body  setEnabledRequest  true  "启用状态"
+// @Param        name  path  string                    true  "任务名称"
+// @Param        body  body  req.CronJobSetEnabledRequest  true  "启用状态"
 // @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.Response
+// @Failure      500  {object}  response.Response
 // @Router       /api/v1/cron-jobs/{name}/enabled [put]
 func (h *CronJobHandler) SetEnabled(c *gin.Context) {
-	name := c.Param("name")
-	var req setEnabledRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	var uri req.CronJobUriRequest
+	if err := c.ShouldBindUri(&uri); err != nil {
 		response.ParamsValidateFail(c, err)
 		return
 	}
-	if err := h.service.SetEnabled(c.Request.Context(), name, *req.Enabled); err != nil {
-		response.FailWithError(c, err)
+	var body req.CronJobSetEnabledRequest
+	if err := c.ShouldBindJSON(&body); err != nil {
+		response.ParamsValidateFail(c, err)
 		return
 	}
 	ctx := c.Request.Context()
-	if *req.Enabled {
-		if err := h.jobManager.EnableJob(ctx, name); err != nil {
+	if err := h.service.SetEnabled(ctx, uri.Name, *body.Enabled); err != nil {
+		response.FailWithError(c, err)
+		return
+	}
+	if *body.Enabled {
+		if err := h.jobManager.EnableJob(ctx, uri.Name); err != nil {
 			response.FailWithError(c, err)
 			return
 		}
 	} else {
-		if err := h.jobManager.DisableJob(ctx, name); err != nil {
+		if err := h.jobManager.DisableJob(ctx, uri.Name); err != nil {
 			response.FailWithError(c, err)
 			return
 		}
@@ -113,10 +121,15 @@ func (h *CronJobHandler) SetEnabled(c *gin.Context) {
 // @Produce      json
 // @Param        name  path  string  true  "任务名称"
 // @Success      200  {object}  response.Response
+// @Failure      500  {object}  response.Response
 // @Router       /api/v1/cron-jobs/{name}/trigger [post]
 func (h *CronJobHandler) Trigger(c *gin.Context) {
-	name := c.Param("name")
-	if err := h.jobManager.TriggerManual(c.Request.Context(), name); err != nil {
+	var uri req.CronJobUriRequest
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ParamsValidateFail(c, err)
+		return
+	}
+	if err := h.jobManager.TriggerManual(c.Request.Context(), uri.Name); err != nil {
 		response.FailWithError(c, err)
 		return
 	}
@@ -129,22 +142,30 @@ func (h *CronJobHandler) Trigger(c *gin.Context) {
 // @Tags         定时任务
 // @Produce      json
 // @Param        name       path   string  true   "任务名称"
-// @Param        page       query  int     false  "页码"
-// @Param        page_size  query  int     false  "每页数量"
-// @Success      200  {object}  response.Response
+// @Param        page       query  int     false  "页码"      default(1)
+// @Param        page_size  query  int     false  "每页数量"  default(20)
+// @Success      200  {object}  response.BasicResponse[resp.CronJobListExecutionsResponse]
+// @Failure      400  {object}  response.Response
+// @Failure      500  {object}  response.Response
 // @Router       /api/v1/cron-jobs/{name}/executions [get]
 func (h *CronJobHandler) ListExecutions(c *gin.Context) {
-	name := c.Param("name")
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
-
-	executions, total, err := h.service.ListExecutions(c.Request.Context(), name, page, pageSize)
+	var uri req.CronJobUriRequest
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ParamsValidateFail(c, err)
+		return
+	}
+	var query req.CronJobListExecutionsRequest
+	if err := c.ShouldBindQuery(&query); err != nil {
+		response.ParamsValidateFail(c, err)
+		return
+	}
+	executions, total, err := h.service.ListExecutions(c.Request.Context(), uri.Name, query.Page, query.PageSize)
 	if err != nil {
 		response.FailWithError(c, err)
 		return
 	}
-	response.SuccessWithData(c, gin.H{
-		"total":      total,
-		"executions": executions,
+	response.SuccessWithData(c, resp.CronJobListExecutionsResponse{
+		Total:      total,
+		Executions: executions,
 	})
 }
