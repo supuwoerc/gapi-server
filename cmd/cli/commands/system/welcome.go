@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -17,7 +18,7 @@ func newWelcomeCmd(cliFactory CliFactory) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cli, err := cliFactory()
 			if err != nil {
-				return fmt.Errorf("failed to initialize cli: %w", err)
+				return errors.Wrap(err, "failed to initialize cli")
 			}
 			defer cli.Close()
 

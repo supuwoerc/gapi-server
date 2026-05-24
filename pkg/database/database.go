@@ -7,6 +7,7 @@ import (
 	"github.com/supuwoerc/gapi-server/internal/config"
 	"github.com/supuwoerc/gapi-server/pkg/logger"
 
+	"github.com/pkg/errors"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
@@ -42,12 +43,12 @@ func NewConnection(cfg *config.DatabaseConfig, l *logger.Logger) (*gorm.DB, erro
 		Logger: gormLogger,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to database: %w", err)
+		return nil, errors.Wrap(err, "failed to connect to database")
 	}
 
 	sqlDB, err := db.DB()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get underlying sql.DB: %w", err)
+		return nil, errors.Wrap(err, "failed to get underlying sql.DB")
 	}
 
 	maxIdleConns := cfg.MaxIdleConns

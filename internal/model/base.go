@@ -2,9 +2,9 @@ package model
 
 import (
 	"database/sql/driver"
-	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
 	"gorm.io/plugin/soft_delete"
 )
 
@@ -63,7 +63,7 @@ func (c *UpsertTime) Scan(v interface{}) error {
 			return nil
 		}
 		if t, err := time.ParseInLocation(time.DateTime, string(value), time.Local); err != nil {
-			return fmt.Errorf("[UpsertTime] can not convert %v to timestamp: %w", v, err)
+			return errors.Wrapf(err, "[UpsertTime] can not convert %v to timestamp", v)
 		} else {
 			*c = UpsertTime(t)
 			return nil
@@ -74,13 +74,13 @@ func (c *UpsertTime) Scan(v interface{}) error {
 			return nil
 		}
 		if t, err := time.ParseInLocation(time.DateTime, value, time.Local); err != nil {
-			return fmt.Errorf("[UpsertTime] can not convert %v to timestamp: %w", v, err)
+			return errors.Wrapf(err, "[UpsertTime] can not convert %v to timestamp", v)
 		} else {
 			*c = UpsertTime(t)
 			return nil
 		}
 	default:
-		return fmt.Errorf("[UpsertTime] can not convert %v (type %T) to timestamp", v, v)
+		return errors.Errorf("[UpsertTime] can not convert %v (type %T) to timestamp", v, v)
 	}
 }
 

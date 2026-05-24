@@ -2,7 +2,6 @@ package cronjob
 
 import (
 	"context"
-	"fmt"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -10,6 +9,7 @@ import (
 	"github.com/supuwoerc/gapi-server/internal/config"
 	"github.com/supuwoerc/gapi-server/pkg/logger"
 
+	"github.com/pkg/errors"
 	"github.com/robfig/cron/v3"
 	"go.uber.org/zap"
 )
@@ -58,20 +58,20 @@ func (m *JobManager) Start(ctx context.Context) error {
 	)
 
 	if err := m.recorder.SyncJobDefinitions(ctx, m.jobs); err != nil {
-		return fmt.Errorf("cron: sync job definitions: %w", err)
+		return errors.Wrap(err, "cron: sync job definitions")
 	}
 
 	for _, j := range m.jobs {
 		enabled, err := m.recorder.IsJobEnabled(ctx, j.Name())
 		if err != nil {
-			return fmt.Errorf("cron: check job enabled %s: %w", j.Name(), err)
+			return errors.Wrapf(err, "cron: check job enabled %s", j.Name())
 		}
 		if !enabled {
 			m.logger.Info("cron: job disabled, skipping", zap.String("job", j.Name()))
 			continue
 		}
 		if err := m.registerJob(j); err != nil {
-			return fmt.Errorf("cron: register job %s: %w", j.Name(), err)
+			return errors.Wrapf(err, "cron: register job %s", j.Name())
 		}
 	}
 
@@ -111,7 +111,7 @@ func (m *JobManager) TriggerManual(ctx context.Context, jobName string) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("job not found: %s", jobName)
+	return errors.Errorf("job not found: %s", jobName)
 }
 
 func (m *JobManager) EnableJob(ctx context.Context, jobName string) error {
@@ -126,7 +126,7 @@ func (m *JobManager) EnableJob(ctx context.Context, jobName string) error {
 			return m.registerJob(j)
 		}
 	}
-	return fmt.Errorf("job not found: %s", jobName)
+	return errors.Errorf("job not found: %s", jobName)
 }
 
 func (m *JobManager) DisableJob(_ context.Context, jobName string) error {
@@ -202,7 +202,7 @@ func (m *JobManager) executeWithRecording(ctx context.Context, j SystemJob, trig
 		defer func() {
 			if r := recover(); r != nil {
 				stack := string(debug.Stack())
-				jobErr = fmt.Errorf("panic: %v\n%s", r, stack)
+				jobErr = errors.Errorf("panic: %v\n%s", r, stack)
 				status = StatusPanic
 				m.logger.Error("cron: job panicked",
 					zap.String("job", j.Name()),
