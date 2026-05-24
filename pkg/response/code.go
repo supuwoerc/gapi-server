@@ -16,6 +16,7 @@ const (
 	InvalidToken  StatusCode = 10003 // invalidToken
 	CancelRequest StatusCode = 10004 // cancelRequest
 	RecoveryError StatusCode = 10005 // recoveryError
-	TimeoutErr    StatusCode = 10009 // timeoutErr
-	Busy          StatusCode = 10010 // busy
+	InternalError StatusCode = 10006 // internalError
+	TimeoutErr    StatusCode = 10007 // timeoutErr
+	Busy          StatusCode = 10008 // busy
 )

@@ -74,7 +74,7 @@ func FailWithError(ctx *gin.Context, err error) {
 	case errors.Is(err, context.DeadlineExceeded):
 		FailWithCode(ctx, TimeoutErr)
 	default:
-		FailWithMessage(ctx, err.Error())
+		FailWithCode(ctx, InternalError)
 	}
 }
 

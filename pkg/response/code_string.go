@@ -14,29 +14,19 @@ func _() {
 	_ = x[InvalidToken-10003]
 	_ = x[CancelRequest-10004]
 	_ = x[RecoveryError-10005]
-	_ = x[TimeoutErr-10009]
-	_ = x[Busy-10010]
+	_ = x[InternalError-10006]
+	_ = x[TimeoutErr-10007]
+	_ = x[Busy-10008]
 }
 
-const (
-	_StatusCode_name_0 = "okerrorinvalidParamsinvalidTokencancelRequestrecoveryError"
-	_StatusCode_name_1 = "timeoutErrbusy"
-)
+const _StatusCode_name = "okerrorinvalidParamsinvalidTokencancelRequestrecoveryErrorinternalErrortimeoutErrbusy"
 
-var (
-	_StatusCode_index_0 = [...]uint8{0, 2, 7, 20, 32, 45, 58}
-	_StatusCode_index_1 = [...]uint8{0, 10, 14}
-)
+var _StatusCode_index = [...]uint8{0, 2, 7, 20, 32, 45, 58, 71, 81, 85}
 
 func (i StatusCode) String() string {
-	switch {
-	case 10000 <= i && i <= 10005:
-		i -= 10000
-		return _StatusCode_name_0[_StatusCode_index_0[i]:_StatusCode_index_0[i+1]]
-	case 10009 <= i && i <= 10010:
-		i -= 10009
-		return _StatusCode_name_1[_StatusCode_index_1[i]:_StatusCode_index_1[i+1]]
-	default:
+	idx := int(i) - 10000
+	if i < 10000 || idx >= len(_StatusCode_index)-1 {
 		return "StatusCode(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
+	return _StatusCode_name[_StatusCode_index[idx]:_StatusCode_index[idx+1]]
 }
