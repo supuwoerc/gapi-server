@@ -1,6 +1,10 @@
 package cronjob
 
-import "context"
+import (
+	"context"
+
+	"github.com/pkg/errors"
+)
 
 type ExecutionMode int
 
@@ -22,6 +26,8 @@ const (
 	StatusCancelled = "cancelled"
 	StatusPanic     = "panic"
 )
+
+var ErrJobRunning = errors.New("job is currently running")
 
 type SystemJob interface {
 	Name() string

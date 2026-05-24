@@ -1,6 +1,8 @@
 package v1
 
 import (
+	stderrors "errors"
+
 	"github.com/supuwoerc/gapi-server/internal/cronjob"
 	"github.com/supuwoerc/gapi-server/internal/handler/v1/req"
 	"github.com/supuwoerc/gapi-server/internal/handler/v1/resp"
@@ -26,7 +28,8 @@ func (h *CronJobHandler) Register(r *gin.RouterGroup) {
 	{
 		jobs.GET("", h.List)
 		jobs.GET("/:name", h.Get)
-		jobs.PUT("/:name/enabled", h.SetEnabled)
+		jobs.PUT("/:name/enable", h.Enable)
+		jobs.PUT("/:name/disable", h.Disable)
 		jobs.POST("/:name/trigger", h.Trigger)
 		jobs.GET("/:name/executions", h.ListExecutions)
 	}
@@ -72,55 +75,77 @@ func (h *CronJobHandler) Get(c *gin.Context) {
 	response.SuccessWithData(c, resp.CronJobDetailResponse{CronJob: job})
 }
 
-// SetEnabled
-// @Summary      启用/禁用定时任务
-// @Description  修改定时任务的启用状态
+// Enable
+// @Summary      启用定时任务
+// @Description  启用指定的定时任务
 // @Tags         定时任务
-// @Accept       json
 // @Produce      json
-// @Param        name  path  string                    true  "任务名称"
-// @Param        body  body  req.CronJobSetEnabledRequest  true  "启用状态"
+// @Param        name  path  string  true  "任务名称"
 // @Success      200  {object}  response.Response
 // @Failure      400  {object}  response.Response
 // @Failure      500  {object}  response.Response
-// @Router       /api/v1/cron-jobs/{name}/enabled [put]
-func (h *CronJobHandler) SetEnabled(c *gin.Context) {
+// @Router       /api/v1/cron-jobs/{name}/enable [put]
+func (h *CronJobHandler) Enable(c *gin.Context) {
 	var uri req.CronJobUriRequest
 	if err := c.ShouldBindUri(&uri); err != nil {
 		response.ParamsValidateFail(c, err)
 		return
 	}
-	var body req.CronJobSetEnabledRequest
-	if err := c.ShouldBindJSON(&body); err != nil {
+	ctx := c.Request.Context()
+	if err := h.service.SetEnabled(ctx, uri.Name, true); err != nil {
+		response.FailWithError(c, err)
+		return
+	}
+	if err := h.jobManager.EnableJob(ctx, uri.Name); err != nil {
+		response.FailWithError(c, err)
+		return
+	}
+	response.Success(c)
+}
+
+// Disable
+// @Summary      禁用定时任务
+// @Description  禁用指定的定时任务，可通过 force 参数立即取消正在执行的任务
+// @Tags         定时任务
+// @Produce      json
+// @Param        name   path   string  true   "任务名称"
+// @Param        force  query  bool    false  "是否立即取消正在执行的任务"  default(false)
+// @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.Response
+// @Failure      500  {object}  response.Response
+// @Router       /api/v1/cron-jobs/{name}/disable [put]
+func (h *CronJobHandler) Disable(c *gin.Context) {
+	var uri req.CronJobUriRequest
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ParamsValidateFail(c, err)
+		return
+	}
+	var query req.CronJobDisableRequest
+	if err := c.ShouldBindQuery(&query); err != nil {
 		response.ParamsValidateFail(c, err)
 		return
 	}
 	ctx := c.Request.Context()
-	if err := h.service.SetEnabled(ctx, uri.Name, *body.Enabled); err != nil {
+	if err := h.service.SetEnabled(ctx, uri.Name, false); err != nil {
 		response.FailWithError(c, err)
 		return
 	}
-	if *body.Enabled {
-		if err := h.jobManager.EnableJob(ctx, uri.Name); err != nil {
-			response.FailWithError(c, err)
-			return
-		}
-	} else {
-		if err := h.jobManager.DisableJob(ctx, uri.Name); err != nil {
-			response.FailWithError(c, err)
-			return
-		}
+	if err := h.jobManager.DisableJob(ctx, uri.Name, query.Force); err != nil {
+		response.FailWithError(c, err)
+		return
 	}
 	response.Success(c)
 }
 
 // Trigger
 // @Summary      手动触发定时任务
-// @Description  立即执行一次指定的定时任务
+// @Description  立即执行一次指定的定时任务，可通过 force 参数强制执行（忽略正在运行的检查）
 // @Tags         定时任务
 // @Produce      json
-// @Param        name  path  string  true  "任务名称"
+// @Param        name   path   string  true   "任务名称"
+// @Param        force  query  bool    false  "是否强制执行"  default(false)
 // @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.Response
 // @Failure      500  {object}  response.Response
 // @Router       /api/v1/cron-jobs/{name}/trigger [post]
 func (h *CronJobHandler) Trigger(c *gin.Context) {
@@ -129,7 +154,16 @@ func (h *CronJobHandler) Trigger(c *gin.Context) {
 		response.ParamsValidateFail(c, err)
 		return
 	}
-	if err := h.jobManager.TriggerManual(c.Request.Context(), uri.Name); err != nil {
+	var query req.CronJobTriggerRequest
+	if err := c.ShouldBindQuery(&query); err != nil {
+		response.ParamsValidateFail(c, err)
+		return
+	}
+	if err := h.jobManager.TriggerManual(c.Request.Context(), uri.Name, query.Force); err != nil {
+		if stderrors.Is(err, cronjob.ErrJobRunning) {
+			response.FailWithCode(c, response.Busy)
+			return
+		}
 		response.FailWithError(c, err)
 		return
 	}

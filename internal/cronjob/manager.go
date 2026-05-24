@@ -104,9 +104,17 @@ func (m *JobManager) Stop() {
 	}
 }
 
-func (m *JobManager) TriggerManual(ctx context.Context, jobName string) error {
+func (m *JobManager) TriggerManual(ctx context.Context, jobName string, force bool) error {
 	for _, j := range m.jobs {
 		if j.Name() == jobName {
+			if !force {
+				m.mu.RLock()
+				_, running := m.cancelMap[jobName]
+				m.mu.RUnlock()
+				if running && j.ExecutionMode() != ModeAllowConcurrent {
+					return ErrJobRunning
+				}
+			}
 			go m.executeWithRecording(ctx, j, TriggerByManual)
 			return nil
 		}
@@ -129,16 +137,21 @@ func (m *JobManager) EnableJob(ctx context.Context, jobName string) error {
 	return errors.Errorf("job not found: %s", jobName)
 }
 
-func (m *JobManager) DisableJob(_ context.Context, jobName string) error {
+func (m *JobManager) DisableJob(_ context.Context, jobName string, cancelRunning bool) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	entryID, exists := m.entryMap[jobName]
-	if !exists {
-		return nil
+	if exists {
+		m.cron.Remove(entryID)
+		delete(m.entryMap, jobName)
+		m.logger.Info("cron: job removed from scheduler", zap.String("job", jobName))
 	}
-	m.cron.Remove(entryID)
-	delete(m.entryMap, jobName)
-	m.logger.Info("cron: job removed from scheduler", zap.String("job", jobName))
+	if cancelRunning {
+		if cancel, ok := m.cancelMap[jobName]; ok {
+			cancel()
+			m.logger.Info("cron: cancelled running job", zap.String("job", jobName))
+		}
+	}
 	return nil
 }
 

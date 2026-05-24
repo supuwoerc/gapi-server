@@ -5,9 +5,14 @@ type CronJobUriRequest struct {
 	Name string `uri:"name" binding:"required" example:"server_status"` // 任务名称
 }
 
-// CronJobSetEnabledRequest 启用/禁用定时任务请求
-type CronJobSetEnabledRequest struct {
-	Enabled *bool `json:"enabled" binding:"required" example:"true"` // 是否启用
+// CronJobDisableRequest 禁用定时任务查询参数
+type CronJobDisableRequest struct {
+	Force bool `form:"force"` // 是否立即取消正在执行的任务
+}
+
+// CronJobTriggerRequest 手动触发定时任务查询参数
+type CronJobTriggerRequest struct {
+	Force bool `form:"force"` // 是否强制执行（忽略正在运行的检查）
 }
 
 // CronJobListExecutionsRequest 执行历史分页查询参数
