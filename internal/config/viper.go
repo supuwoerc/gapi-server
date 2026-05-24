@@ -14,7 +14,7 @@ func NewViper() *viper.Viper {
 	if err := v.ReadInConfig(); err != nil {
 		panic(err)
 	}
-	env := determineEnvironment()
+	env := DetermineEnvironment()
 	v.SetConfigName(env)
 	if err := v.MergeInConfig(); err != nil {
 		panic(err)
@@ -22,7 +22,7 @@ func NewViper() *viper.Viper {
 	return v
 }
 
-func determineEnvironment() string {
+func DetermineEnvironment() string {
 	env := os.Getenv("APP_ENV")
 	switch env {
 	case "prod", "test":

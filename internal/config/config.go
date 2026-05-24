@@ -1,8 +1,6 @@
 package config
 
 import (
-	"os"
-
 	"github.com/spf13/viper"
 )
 
@@ -81,9 +79,6 @@ func NewConfig(v *viper.Viper) *Config {
 	if err := v.Unmarshal(&cfg); err != nil {
 		panic(err)
 	}
-	cfg.Env = os.Getenv("APP_ENV")
-	if cfg.Env == "" {
-		cfg.Env = "dev"
-	}
+	cfg.Env = DetermineEnvironment()
 	return &cfg
 }

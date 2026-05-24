@@ -32,27 +32,27 @@ func (s *ViperSuite) setEnv(value string) {
 
 func (s *ViperSuite) TestDetermineEnvironment_EmptyDefaultsToDev() {
 	s.setEnv("")
-	assert.Equal(s.T(), "dev", determineEnvironment())
+	assert.Equal(s.T(), "dev", DetermineEnvironment())
 }
 
 func (s *ViperSuite) TestDetermineEnvironment_ExplicitDev() {
 	s.setEnv("dev")
-	assert.Equal(s.T(), "dev", determineEnvironment())
+	assert.Equal(s.T(), "dev", DetermineEnvironment())
 }
 
 func (s *ViperSuite) TestDetermineEnvironment_Prod() {
 	s.setEnv("prod")
-	assert.Equal(s.T(), "prod", determineEnvironment())
+	assert.Equal(s.T(), "prod", DetermineEnvironment())
 }
 
 func (s *ViperSuite) TestDetermineEnvironment_Test() {
 	s.setEnv("test")
-	assert.Equal(s.T(), "test", determineEnvironment())
+	assert.Equal(s.T(), "test", DetermineEnvironment())
 }
 
 func (s *ViperSuite) TestDetermineEnvironment_UnknownDefaultsToDev() {
 	s.setEnv("staging")
-	assert.Equal(s.T(), "dev", determineEnvironment())
+	assert.Equal(s.T(), "dev", DetermineEnvironment())
 }
 
 func TestViperSuite(t *testing.T) {
