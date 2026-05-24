@@ -1,7 +1,7 @@
 package provider
 
 import (
-	"github.com/supuwoerc/gapi-server/internal/handler/v1"
+	v1 "github.com/supuwoerc/gapi-server/internal/handler/v1"
 	"github.com/supuwoerc/gapi-server/internal/router"
 
 	"github.com/google/wire"
@@ -13,6 +13,6 @@ var HandlerSet = wire.NewSet(
 	router.NewV1Handlers,
 )
 
-func ProvideV1Registrars(health *v1.HealthHandler) []router.Registrar {
-	return []router.Registrar{health}
+func ProvideV1Registrars(health *v1.HealthHandler, cronJob *v1.CronJobHandler) []router.Registrar {
+	return []router.Registrar{health, cronJob}
 }

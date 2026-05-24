@@ -14,6 +14,7 @@ func WireApp() (*app.App, error) {
 	wire.Build(
 		provider.ConfigSet,
 		provider.InfraSet,
+		provider.CronJobSet,
 		provider.HandlerSet,
 		provider.ServerSet,
 		app.NewApp,

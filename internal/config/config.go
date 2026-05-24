@@ -13,6 +13,7 @@ type Config struct {
 	RateLimit RateLimitConfig `mapstructure:"rate_limit"` // 限流配置
 	Redis     RedisConfig     `mapstructure:"redis"`      // Redis 配置
 	Locale    LocaleConfig    `mapstructure:"locale"`     // 国际化配置
+	Cron      CronConfig      `mapstructure:"cron"`       // 定时任务配置
 	Env       string          `mapstructure:"-"`          // 运行环境 (dev/prod/test)
 }
 
@@ -71,6 +72,12 @@ type RedisConfig struct {
 type LocaleConfig struct {
 	DefaultLang string `mapstructure:"default_lang"` // 默认语言 (cn/en)
 	LocaleKey   string `mapstructure:"locale_key"`   // 请求 header key
+}
+
+// CronConfig holds cron job scheduler settings.
+type CronConfig struct {
+	Enabled         bool `mapstructure:"enabled"`          // 是否启用定时任务
+	ShutdownTimeout int  `mapstructure:"shutdown_timeout"` // 关闭时等待运行中任务的超时时间 (秒)
 }
 
 // NewConfig unmarshals viper config into Config struct.

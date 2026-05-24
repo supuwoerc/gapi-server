@@ -43,3 +43,7 @@ redis:
 locale:
   default_lang: "cn"             # 默认语言 (cn/en)
   locale_key: "Locale"           # 从 Header 中读取语言的 key
+
+cron:
+  enabled: true                  # 是否启用定时任务
+  shutdown_timeout: 30           # 关闭时等待运行中任务的超时时间 (秒)
