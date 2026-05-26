@@ -2,6 +2,7 @@ package provider
 
 import (
 	"github.com/supuwoerc/gapi-server/pkg/database"
+	"github.com/supuwoerc/gapi-server/pkg/etcd"
 	"github.com/supuwoerc/gapi-server/pkg/logger"
 	pkgRedis "github.com/supuwoerc/gapi-server/pkg/redis"
 
@@ -12,4 +13,5 @@ var InfraSet = wire.NewSet(
 	logger.NewLogger,
 	database.NewConnection,
 	pkgRedis.NewClient,
+	etcd.NewClient,
 )

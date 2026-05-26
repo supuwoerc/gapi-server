@@ -8,6 +8,7 @@ import (
 	"github.com/supuwoerc/gapi-server/pkg/logger"
 
 	"github.com/redis/go-redis/v9"
+	clientv3 "go.etcd.io/etcd/client/v3"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -17,11 +18,12 @@ type App struct {
 	logger     *logger.Logger
 	db         *gorm.DB
 	redis      *redis.Client
+	etcd       *clientv3.Client
 	jobManager *cronjob.JobManager
 }
 
-func NewApp(server *server.HttpServer, logger *logger.Logger, db *gorm.DB, redis *redis.Client, jobManager *cronjob.JobManager) *App {
-	return &App{server: server, logger: logger, db: db, redis: redis, jobManager: jobManager}
+func NewApp(server *server.HttpServer, logger *logger.Logger, db *gorm.DB, redis *redis.Client, etcd *clientv3.Client, jobManager *cronjob.JobManager) *App {
+	return &App{server: server, logger: logger, db: db, redis: redis, etcd: etcd, jobManager: jobManager}
 }
 
 func (a *App) Run() {
@@ -44,5 +46,8 @@ func (a *App) Close() {
 	}
 	if err := a.redis.Close(); err != nil {
 		a.logger.Error("failed to close redis", zap.Error(err))
+	}
+	if err := a.etcd.Close(); err != nil {
+		a.logger.Error("failed to close etcd", zap.Error(err))
 	}
 }

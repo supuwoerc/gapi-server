@@ -47,3 +47,10 @@ locale:
 cron:
   enabled: true                  # 是否启用定时任务
   shutdown_timeout: 30           # 关闭时等待运行中任务的超时时间 (秒)
+
+etcd:
+  endpoints:                     # etcd 节点地址列表
+    - "127.0.0.1:2379"
+  username: ""                   # 用户名
+  password: ""                   # 密码
+  dial_timeout: 5                # 连接超时 (秒)

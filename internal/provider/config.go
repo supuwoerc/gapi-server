@@ -16,6 +16,7 @@ var ConfigSet = wire.NewSet(
 	ProvideCorsConfig,
 	ProvideRateLimitConfig,
 	ProvideLocaleConfig,
+	ProvideEtcdConfig,
 )
 
 func ProvideLogConfig(cfg *config.Config) *config.LogConfig {
@@ -44,4 +45,8 @@ func ProvideRateLimitConfig(cfg *config.Config) *config.RateLimitConfig {
 
 func ProvideLocaleConfig(cfg *config.Config) *config.LocaleConfig {
 	return &cfg.Locale
+}
+
+func ProvideEtcdConfig(cfg *config.Config) *config.EtcdConfig {
+	return &cfg.Etcd
 }

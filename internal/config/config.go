@@ -14,6 +14,7 @@ type Config struct {
 	Redis     RedisConfig     `mapstructure:"redis"`      // Redis 配置
 	Locale    LocaleConfig    `mapstructure:"locale"`     // 国际化配置
 	Cron      CronConfig      `mapstructure:"cron"`       // 定时任务配置
+	Etcd      EtcdConfig      `mapstructure:"etcd"`       // Etcd 配置
 	Env       string          `mapstructure:"-"`          // 运行环境 (dev/prod/test)
 }
 
@@ -78,6 +79,14 @@ type LocaleConfig struct {
 type CronConfig struct {
 	Enabled         bool `mapstructure:"enabled"`          // 是否启用定时任务
 	ShutdownTimeout int  `mapstructure:"shutdown_timeout"` // 关闭时等待运行中任务的超时时间 (秒)
+}
+
+// EtcdConfig holds etcd client connection settings.
+type EtcdConfig struct {
+	Endpoints   []string `mapstructure:"endpoints"`    // etcd 节点地址列表
+	Username    string   `mapstructure:"username"`     // 用户名
+	Password    string   `mapstructure:"password"`     // 密码
+	DialTimeout int      `mapstructure:"dial_timeout"` // 连接超时 (秒)
 }
 
 // NewConfig unmarshals viper config into Config struct.

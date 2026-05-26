@@ -17,6 +17,7 @@ import (
 	"github.com/supuwoerc/gapi-server/internal/server"
 	"github.com/supuwoerc/gapi-server/internal/service"
 	"github.com/supuwoerc/gapi-server/pkg/database"
+	"github.com/supuwoerc/gapi-server/pkg/etcd"
 	"github.com/supuwoerc/gapi-server/pkg/logger"
 	"github.com/supuwoerc/gapi-server/pkg/redis"
 )
@@ -54,6 +55,11 @@ func WireApp() (*app.App, error) {
 	v1Handlers := router.NewV1Handlers(v2)
 	engine := router.NewEngine(loggerLogger, configConfig, client, v1Handlers)
 	httpServer := server.NewHttpServer(serverConfig, engine, loggerLogger)
-	appApp := app.NewApp(httpServer, loggerLogger, db, client, jobManager)
+	etcdConfig := provider.ProvideEtcdConfig(configConfig)
+	clientv3Client, err := etcd.NewClient(etcdConfig, loggerLogger)
+	if err != nil {
+		return nil, err
+	}
+	appApp := app.NewApp(httpServer, loggerLogger, db, client, clientv3Client, jobManager)
 	return appApp, nil
 }
