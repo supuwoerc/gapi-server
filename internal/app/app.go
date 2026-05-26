@@ -14,40 +14,36 @@ import (
 )
 
 type App struct {
-	server     *server.HttpServer
-	logger     *logger.Logger
-	db         *gorm.DB
-	redis      *redis.Client
-	etcd       *clientv3.Client
-	jobManager *cronjob.JobManager
-}
-
-func NewApp(server *server.HttpServer, logger *logger.Logger, db *gorm.DB, redis *redis.Client, etcd *clientv3.Client, jobManager *cronjob.JobManager) *App {
-	return &App{server: server, logger: logger, db: db, redis: redis, etcd: etcd, jobManager: jobManager}
+	Server     *server.HttpServer
+	Logger     *logger.Logger
+	DB         *gorm.DB
+	Redis      *redis.Client
+	Etcd       *clientv3.Client
+	JobManager *cronjob.JobManager
 }
 
 func (a *App) Run() {
-	if err := a.jobManager.Start(context.Background()); err != nil {
-		a.logger.Fatal("failed to start job manager", zap.Error(err))
+	if err := a.JobManager.Start(context.Background()); err != nil {
+		a.Logger.Fatal("failed to start job manager", zap.Error(err))
 	}
-	a.server.Run()
+	a.Server.Run()
 }
 
 func (a *App) Close() {
 	defer func() {
-		_ = a.logger.Sync()
+		_ = a.Logger.Sync()
 	}()
-	defer a.logger.Info("app clean is executed")
-	a.jobManager.Stop()
-	if sqlDB, err := a.db.DB(); err != nil {
-		a.logger.Error("failed to get sql.DB", zap.Error(err))
+	defer a.Logger.Info("app clean is executed")
+	a.JobManager.Stop()
+	if sqlDB, err := a.DB.DB(); err != nil {
+		a.Logger.Error("failed to get sql.DB", zap.Error(err))
 	} else if err := sqlDB.Close(); err != nil {
-		a.logger.Error("failed to close database", zap.Error(err))
+		a.Logger.Error("failed to close database", zap.Error(err))
 	}
-	if err := a.redis.Close(); err != nil {
-		a.logger.Error("failed to close redis", zap.Error(err))
+	if err := a.Redis.Close(); err != nil {
+		a.Logger.Error("failed to close redis", zap.Error(err))
 	}
-	if err := a.etcd.Close(); err != nil {
-		a.logger.Error("failed to close etcd", zap.Error(err))
+	if err := a.Etcd.Close(); err != nil {
+		a.Logger.Error("failed to close etcd", zap.Error(err))
 	}
 }

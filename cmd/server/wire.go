@@ -17,7 +17,7 @@ func WireApp() (*app.App, error) {
 		provider.CronJobSet,
 		provider.HandlerSet,
 		provider.ServerSet,
-		app.NewApp,
+		wire.Struct(new(app.App), "*"),
 	)
 	return nil, nil
 }

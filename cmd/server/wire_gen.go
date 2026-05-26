@@ -60,6 +60,13 @@ func WireApp() (*app.App, error) {
 	if err != nil {
 		return nil, err
 	}
-	appApp := app.NewApp(httpServer, loggerLogger, db, client, clientv3Client, jobManager)
+	appApp := &app.App{
+		Server:     httpServer,
+		Logger:     loggerLogger,
+		DB:         db,
+		Redis:      client,
+		Etcd:       clientv3Client,
+		JobManager: jobManager,
+	}
 	return appApp, nil
 }

@@ -32,6 +32,10 @@ func WireCli() (*app.Cli, error) {
 	if err != nil {
 		return nil, err
 	}
-	cli := app.NewCli(loggerLogger, db, client)
+	cli := &app.Cli{
+		Logger: loggerLogger,
+		DB:     db,
+		Redis:  client,
+	}
 	return cli, nil
 }

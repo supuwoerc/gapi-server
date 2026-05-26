@@ -14,10 +14,6 @@ type Cli struct {
 	Redis  *redis.Client
 }
 
-func NewCli(logger *logger.Logger, db *gorm.DB, redis *redis.Client) *Cli {
-	return &Cli{Logger: logger, DB: db, Redis: redis}
-}
-
 func (c *Cli) Close() {
 	defer func() {
 		_ = c.Logger.Sync()
