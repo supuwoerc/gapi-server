@@ -7,22 +7,29 @@ import (
 
 	"github.com/supuwoerc/gapi-server/internal/cronjob"
 	"github.com/supuwoerc/gapi-server/internal/model"
-	"github.com/supuwoerc/gapi-server/internal/repository"
 	"github.com/supuwoerc/gapi-server/pkg/logger"
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
+type CronJobRepository interface {
+	UpsertJob(ctx context.Context, job *model.CronJob) error
+	FindByName(ctx context.Context, name string) (*model.CronJob, error)
+	ListAll(ctx context.Context) ([]*model.CronJob, error)
+	UpdateEnabled(ctx context.Context, name string, enabled bool) error
+	UpdateLastRun(ctx context.Context, name string, status string) error
+	CreateExecution(ctx context.Context, exec *model.CronJobExecution) error
+	UpdateExecution(ctx context.Context, id uint, updates map[string]any) error
+	ListExecutions(ctx context.Context, jobName string, page, pageSize int) ([]*model.CronJobExecution, int64, error)
+}
+
 type CronJobService struct {
-	repo   *repository.CronJobRepository
+	repo   CronJobRepository
 	logger *logger.Logger
 }
 
-// Ensure CronJobService implements cronjob.JobRecorder
-var _ cronjob.JobRecorder = (*CronJobService)(nil)
-
-func NewCronJobService(repo *repository.CronJobRepository, logger *logger.Logger) *CronJobService {
+func NewCronJobService(repo CronJobRepository, logger *logger.Logger) *CronJobService {
 	return &CronJobService{repo: repo, logger: logger}
 }
 

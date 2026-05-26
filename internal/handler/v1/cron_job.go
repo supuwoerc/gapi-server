@@ -1,23 +1,31 @@
 package v1
 
 import (
+	"context"
 	stderrors "errors"
 
 	"github.com/supuwoerc/gapi-server/internal/cronjob"
 	"github.com/supuwoerc/gapi-server/internal/handler/v1/req"
 	"github.com/supuwoerc/gapi-server/internal/handler/v1/resp"
-	"github.com/supuwoerc/gapi-server/internal/service"
+	"github.com/supuwoerc/gapi-server/internal/model"
 	"github.com/supuwoerc/gapi-server/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
 
+type CronJobService interface {
+	ListJobs(ctx context.Context) ([]*model.CronJob, error)
+	GetJob(ctx context.Context, name string) (*model.CronJob, error)
+	SetEnabled(ctx context.Context, name string, enabled bool) error
+	ListExecutions(ctx context.Context, jobName string, page, pageSize int) ([]*model.CronJobExecution, int64, error)
+}
+
 type CronJobHandler struct {
-	service    *service.CronJobService
+	service    CronJobService
 	jobManager *cronjob.JobManager
 }
 
-func NewCronJobHandler(svc *service.CronJobService, jobManager *cronjob.JobManager) *CronJobHandler {
+func NewCronJobHandler(svc CronJobService, jobManager *cronjob.JobManager) *CronJobHandler {
 	return &CronJobHandler{service: svc, jobManager: jobManager}
 }
 

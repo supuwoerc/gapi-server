@@ -17,7 +17,9 @@ var CronJobSet = wire.NewSet(
 	ProvideSystemJobs,
 	repository.NewCronJobRepository,
 	service.NewCronJobService,
+	wire.Bind(new(service.CronJobRepository), new(*repository.CronJobRepository)),
 	wire.Bind(new(cronjob.JobRecorder), new(*service.CronJobService)),
+	wire.Bind(new(v1.CronJobService), new(*service.CronJobService)),
 	cronjob.NewJobManager,
 	v1.NewCronJobHandler,
 )
