@@ -11,7 +11,7 @@ import (
 	"github.com/supuwoerc/gapi-server/internal/config"
 	"github.com/supuwoerc/gapi-server/internal/cronjob"
 	"github.com/supuwoerc/gapi-server/internal/dal"
-	v1 "github.com/supuwoerc/gapi-server/internal/handler/v1"
+	"github.com/supuwoerc/gapi-server/internal/handler/v1"
 	"github.com/supuwoerc/gapi-server/internal/provider"
 	"github.com/supuwoerc/gapi-server/internal/router"
 	"github.com/supuwoerc/gapi-server/internal/server"
@@ -20,10 +20,6 @@ import (
 	"github.com/supuwoerc/gapi-server/pkg/etcd"
 	"github.com/supuwoerc/gapi-server/pkg/logger"
 	"github.com/supuwoerc/gapi-server/pkg/redis"
-)
-
-import (
-	_ "github.com/supuwoerc/gapi-server/docs"
 )
 
 // Injectors from wire.go:

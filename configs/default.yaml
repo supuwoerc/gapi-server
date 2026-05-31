@@ -9,7 +9,7 @@ database:
   host: "127.0.0.1"           # 数据库主机地址
   port: 3306                  # 数据库端口
   user: "root"                # 数据库用户名
-  password: "root"            # 数据库密码
+  password: "password"            # 数据库密码
   dbname: "gapi"              # 数据库名称
   max_idle_conns: 10          # 连接池最大空闲连接数
   max_open_conns: 100         # 连接池最大打开连接数

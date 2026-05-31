@@ -9,6 +9,7 @@ package main
 import (
 	"github.com/supuwoerc/gapi-server/internal/app"
 	"github.com/supuwoerc/gapi-server/internal/config"
+	"github.com/supuwoerc/gapi-server/internal/provider"
 	"github.com/supuwoerc/gapi-server/pkg/database"
 	"github.com/supuwoerc/gapi-server/pkg/logger"
 )
@@ -18,9 +19,9 @@ import (
 func WireGen() (*app.Gen, error) {
 	viper := config.NewViper()
 	configConfig := config.NewConfig(viper)
-	logConfig := &configConfig.Log
+	logConfig := provider.ProvideLogConfig(configConfig)
 	loggerLogger := logger.NewLogger(logConfig)
-	databaseConfig := &configConfig.Database
+	databaseConfig := provider.ProvideDBConfig(configConfig)
 	db, err := database.NewConnection(databaseConfig, loggerLogger)
 	if err != nil {
 		return nil, err
