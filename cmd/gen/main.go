@@ -1,11 +1,11 @@
 package main
 
-//go:generate go run .
-
 import (
 	"gorm.io/gen"
 	"gorm.io/gen/field"
 )
+
+//go:generate go run .
 
 func main() {
 	g := gen.NewGenerator(gen.Config{
@@ -15,7 +15,7 @@ func main() {
 		FieldSignable:     true,
 		FieldNullable:     true,
 		FieldCoverable:    false,
-		FieldWithIndexTag: false,
+		FieldWithIndexTag: true,
 		FieldWithTypeTag:  true,
 	})
 	wireGen, err := WireGen()
@@ -25,8 +25,24 @@ func main() {
 	defer wireGen.Close()
 	g.UseDB(wireGen.DB)
 
+	g.WithImportPkgPath(
+		"github.com/shopspring/decimal",
+		"gorm.io/datatypes",
+		"gorm.io/plugin/soft_delete",
+	)
+
+	g.WithOpts(
+		gen.FieldType("deleted_at", "soft_delete.DeletedAt"),
+		gen.FieldGORMTag("deleted_at", func(tag field.GormTag) field.GormTag {
+			tag.Set("softDelete", "milli")
+			tag.Set("index", "")
+			return tag
+		}),
+		gen.FieldJSONTag("deleted_at", "deleted_at,omitempty"),
+	)
+
 	commonOpts := []gen.ModelOpt{
-		gen.FieldType("deleted_at", "gorm.io/plugin/soft_delete.DeletedAt"),
+		gen.FieldType("deleted_at", "soft_delete.DeletedAt"),
 		gen.FieldGORMTag("deleted_at", func(tag field.GormTag) field.GormTag {
 			tag.Set("softDelete", "milli")
 			tag.Set("index", "")
