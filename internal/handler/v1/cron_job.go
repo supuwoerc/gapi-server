@@ -53,7 +53,7 @@ func (h *CronJobHandler) List(c *gin.Context) {
 		response.FailWithError(c, err)
 		return
 	}
-	response.SuccessWithData(c, resp.CronJobListResponse{Jobs: jobs})
+	response.SuccessWithData(c, resp.CronJobListResponse{Jobs: resp.NewCronJobItems(jobs)})
 }
 
 // Get
@@ -76,7 +76,7 @@ func (h *CronJobHandler) Get(c *gin.Context) {
 		response.FailWithError(c, err)
 		return
 	}
-	response.SuccessWithData(c, resp.CronJobDetailResponse{CronJob: job})
+	response.SuccessWithData(c, resp.CronJobDetailResponse{CronJobItem: resp.NewCronJobItem(job)})
 }
 
 // Enable
@@ -204,6 +204,6 @@ func (h *CronJobHandler) ListExecutions(c *gin.Context) {
 	}
 	response.SuccessWithData(c, resp.CronJobListExecutionsResponse{
 		Total:      total,
-		Executions: executions,
+		Executions: resp.NewCronJobExecutionItems(executions),
 	})
 }
