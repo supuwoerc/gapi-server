@@ -10,9 +10,9 @@ import (
 	"github.com/supuwoerc/gapi-server/internal/app"
 	"github.com/supuwoerc/gapi-server/internal/config"
 	"github.com/supuwoerc/gapi-server/internal/cronjob"
+	"github.com/supuwoerc/gapi-server/internal/dal"
 	"github.com/supuwoerc/gapi-server/internal/handler/v1"
 	"github.com/supuwoerc/gapi-server/internal/provider"
-	"github.com/supuwoerc/gapi-server/internal/repository"
 	"github.com/supuwoerc/gapi-server/internal/router"
 	"github.com/supuwoerc/gapi-server/internal/server"
 	"github.com/supuwoerc/gapi-server/internal/service"
@@ -45,8 +45,8 @@ func WireApp() (*app.App, error) {
 	if err != nil {
 		return nil, err
 	}
-	cronJobRepository := repository.NewCronJobRepository(db)
-	cronJobService := service.NewCronJobService(cronJobRepository, loggerLogger)
+	cronJobDal := dal.NewCronJobDal(db)
+	cronJobService := service.NewCronJobService(cronJobDal, loggerLogger)
 	cronConfig := provider.ProvideCronConfig(configConfig)
 	v := provider.ProvideSystemJobs(loggerLogger)
 	jobManager := cronjob.NewJobManager(loggerLogger, cronJobService, cronConfig, v)

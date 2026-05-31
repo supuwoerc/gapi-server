@@ -1,6 +1,6 @@
 package resp
 
-import "github.com/supuwoerc/gapi-server/internal/model"
+import "github.com/supuwoerc/gapi-server/internal/dal/model"
 
 // CronJobListResponse 定时任务列表响应
 type CronJobListResponse struct {

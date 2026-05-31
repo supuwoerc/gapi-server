@@ -5,9 +5,9 @@ import (
 	stderrors "errors"
 
 	"github.com/supuwoerc/gapi-server/internal/cronjob"
+	"github.com/supuwoerc/gapi-server/internal/dal/model"
 	"github.com/supuwoerc/gapi-server/internal/handler/v1/req"
 	"github.com/supuwoerc/gapi-server/internal/handler/v1/resp"
-	"github.com/supuwoerc/gapi-server/internal/model"
 	"github.com/supuwoerc/gapi-server/pkg/response"
 
 	"github.com/gin-gonic/gin"

@@ -3,9 +3,9 @@ package provider
 import (
 	"github.com/supuwoerc/gapi-server/internal/config"
 	"github.com/supuwoerc/gapi-server/internal/cronjob"
+	"github.com/supuwoerc/gapi-server/internal/dal"
 	v1 "github.com/supuwoerc/gapi-server/internal/handler/v1"
 	"github.com/supuwoerc/gapi-server/internal/jobs"
-	"github.com/supuwoerc/gapi-server/internal/repository"
 	"github.com/supuwoerc/gapi-server/internal/service"
 	"github.com/supuwoerc/gapi-server/pkg/logger"
 
@@ -15,9 +15,9 @@ import (
 var CronJobSet = wire.NewSet(
 	ProvideCronConfig,
 	ProvideSystemJobs,
-	repository.NewCronJobRepository,
+	dal.NewCronJobDal,
 	service.NewCronJobService,
-	wire.Bind(new(service.CronJobRepository), new(*repository.CronJobRepository)),
+	wire.Bind(new(service.CronJobRepository), new(*dal.CronJobDal)),
 	wire.Bind(new(cronjob.JobRecorder), new(*service.CronJobService)),
 	wire.Bind(new(v1.CronJobService), new(*service.CronJobService)),
 	cronjob.NewJobManager,

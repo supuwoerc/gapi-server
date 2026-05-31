@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/supuwoerc/gapi-server/internal/cronjob"
-	"github.com/supuwoerc/gapi-server/internal/model"
+	"github.com/supuwoerc/gapi-server/internal/dal/model"
 	"github.com/supuwoerc/gapi-server/pkg/logger"
 
 	"go.uber.org/zap"
@@ -20,7 +20,7 @@ type CronJobRepository interface {
 	UpdateEnabled(ctx context.Context, name string, enabled bool) error
 	UpdateLastRun(ctx context.Context, name string, status string) error
 	CreateExecution(ctx context.Context, exec *model.CronJobExecution) error
-	UpdateExecution(ctx context.Context, id uint, updates map[string]any) error
+	UpdateExecution(ctx context.Context, id uint64, updates map[string]any) error
 	ListExecutions(ctx context.Context, jobName string, page, pageSize int) ([]*model.CronJobExecution, int64, error)
 }
 
@@ -67,7 +67,7 @@ func (s *CronJobService) SetEnabled(ctx context.Context, name string, enabled bo
 	return nil
 }
 
-func (s *CronJobService) RecordStart(ctx context.Context, jobName, triggeredBy string) (uint, error) {
+func (s *CronJobService) RecordStart(ctx context.Context, jobName, triggeredBy string) (uint64, error) {
 	exec := &model.CronJobExecution{
 		JobName:     jobName,
 		Status:      cronjob.StatusRunning,
@@ -81,7 +81,7 @@ func (s *CronJobService) RecordStart(ctx context.Context, jobName, triggeredBy s
 	return exec.ID, nil
 }
 
-func (s *CronJobService) RecordEnd(ctx context.Context, executionID uint, status string, jobErr error) error {
+func (s *CronJobService) RecordEnd(ctx context.Context, executionID uint64, status string, jobErr error) error {
 	now := time.Now()
 	updates := map[string]any{
 		"status":   status,
@@ -91,7 +91,7 @@ func (s *CronJobService) RecordEnd(ctx context.Context, executionID uint, status
 		updates["error"] = jobErr.Error()
 	}
 	if err := s.repo.UpdateExecution(ctx, executionID, updates); err != nil {
-		s.logger.Ctx(ctx).Error("failed to record execution end", zap.Uint("executionID", executionID), zap.Error(err))
+		s.logger.Ctx(ctx).Error("failed to record execution end", zap.Uint64("executionID", executionID), zap.Error(err))
 		return err
 	}
 	return nil

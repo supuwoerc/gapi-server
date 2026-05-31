@@ -26,8 +26,8 @@ require (
 	golang.org/x/text v0.37.0
 	gopkg.in/lumberjack.v2 v2.0.0
 	gorm.io/driver/mysql v1.6.0
+	gorm.io/gen v0.3.27
 	gorm.io/gorm v1.31.1
-	gorm.io/plugin/soft_delete v1.2.1
 )
 
 require (
@@ -63,6 +63,7 @@ require (
 	github.com/goccy/go-yaml v1.19.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.3 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
@@ -107,4 +108,7 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	gorm.io/datatypes v1.2.4 // indirect
+	gorm.io/hints v1.1.0 // indirect
+	gorm.io/plugin/dbresolver v1.6.2 // indirect
 )
