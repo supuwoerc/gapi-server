@@ -1,16 +1,25 @@
 package main
 
 import (
+	"path/filepath"
+	"runtime"
+
 	"gorm.io/gen"
 	"gorm.io/gen/field"
 )
 
 //go:generate go run .
 
+func projectRoot() string {
+	_, file, _, _ := runtime.Caller(0)
+	return filepath.Join(filepath.Dir(file), "..", "..")
+}
+
 func main() {
+	root := projectRoot()
 	g := gen.NewGenerator(gen.Config{
-		OutPath:           "../../internal/dal/query",
-		ModelPkgPath:      "../../internal/dal/model",
+		OutPath:           filepath.Join(root, "internal/dal/query"),
+		ModelPkgPath:      filepath.Join(root, "internal/dal/model"),
 		Mode:              gen.WithQueryInterface,
 		FieldSignable:     true,
 		FieldNullable:     true,
@@ -41,19 +50,9 @@ func main() {
 		gen.FieldJSONTag("deleted_at", "deleted_at,omitempty"),
 	)
 
-	commonOpts := []gen.ModelOpt{
-		gen.FieldType("deleted_at", "soft_delete.DeletedAt"),
-		gen.FieldGORMTag("deleted_at", func(tag field.GormTag) field.GormTag {
-			tag.Set("softDelete", "milli")
-			tag.Set("index", "")
-			return tag
-		}),
-		gen.FieldJSONTag("deleted_at", "deleted_at,omitempty"),
-	}
-
 	g.ApplyBasic(
-		g.GenerateModelAs("sys_cron_job", "CronJob", commonOpts...),
-		g.GenerateModelAs("sys_cron_job_execution", "CronJobExecution", commonOpts...),
+		g.GenerateModelAs("sys_cron_job", "CronJob"),
+		g.GenerateModelAs("sys_cron_job_execution", "CronJobExecution"),
 	)
 	g.Execute()
 }
