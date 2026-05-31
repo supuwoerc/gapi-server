@@ -8,7 +8,7 @@ import (
 )
 
 var HandlerSet = wire.NewSet(
-	v1.NewHealthHandler,
+	wire.Struct(new(v1.HealthHandler), "*"),
 	ProvideV1Registrars,
 	router.NewV1Handlers,
 )

@@ -11,7 +11,7 @@ import (
 	"github.com/supuwoerc/gapi-server/internal/config"
 	"github.com/supuwoerc/gapi-server/internal/cronjob"
 	"github.com/supuwoerc/gapi-server/internal/dal"
-	"github.com/supuwoerc/gapi-server/internal/handler/v1"
+	v1 "github.com/supuwoerc/gapi-server/internal/handler/v1"
 	"github.com/supuwoerc/gapi-server/internal/provider"
 	"github.com/supuwoerc/gapi-server/internal/router"
 	"github.com/supuwoerc/gapi-server/internal/server"
@@ -39,18 +39,28 @@ func WireApp() (*app.App, error) {
 	if err != nil {
 		return nil, err
 	}
-	healthHandler := v1.NewHealthHandler(loggerLogger)
+	healthHandler := &v1.HealthHandler{
+		Logger: loggerLogger,
+	}
 	databaseConfig := provider.ProvideDBConfig(configConfig)
 	db, err := database.NewConnection(databaseConfig, loggerLogger)
 	if err != nil {
 		return nil, err
 	}
-	cronJobDal := dal.NewCronJobDal(db)
-	cronJobService := service.NewCronJobService(cronJobDal, loggerLogger)
+	cronJobDal := &dal.CronJobDal{
+		DB: db,
+	}
+	cronJobService := &service.CronJobService{
+		Repo:   cronJobDal,
+		Logger: loggerLogger,
+	}
 	cronConfig := provider.ProvideCronConfig(configConfig)
 	v := provider.ProvideSystemJobs(loggerLogger)
 	jobManager := cronjob.NewJobManager(loggerLogger, cronJobService, cronConfig, v)
-	cronJobHandler := v1.NewCronJobHandler(cronJobService, jobManager)
+	cronJobHandler := &v1.CronJobHandler{
+		Service:    cronJobService,
+		JobManager: jobManager,
+	}
 	v2 := provider.ProvideV1Registrars(healthHandler, cronJobHandler)
 	v1Handlers := router.NewV1Handlers(v2)
 	engine := router.NewEngine(loggerLogger, configConfig, client, v1Handlers)

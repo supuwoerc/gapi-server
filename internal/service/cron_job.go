@@ -25,12 +25,8 @@ type CronJobRepository interface {
 }
 
 type CronJobService struct {
-	repo   CronJobRepository
-	logger *logger.Logger
-}
-
-func NewCronJobService(repo CronJobRepository, logger *logger.Logger) *CronJobService {
-	return &CronJobService{repo: repo, logger: logger}
+	Repo   CronJobRepository
+	Logger *logger.Logger
 }
 
 func (s *CronJobService) SyncJobDefinitions(ctx context.Context, jobs []cronjob.SystemJob) error {
@@ -39,8 +35,8 @@ func (s *CronJobService) SyncJobDefinitions(ctx context.Context, jobs []cronjob.
 			Name:     j.Name(),
 			Interval: j.Interval(),
 		}
-		if err := s.repo.UpsertJob(ctx, job); err != nil {
-			s.logger.Ctx(ctx).Error("failed to upsert job", zap.String("job", j.Name()), zap.Error(err))
+		if err := s.Repo.UpsertJob(ctx, job); err != nil {
+			s.Logger.Ctx(ctx).Error("failed to upsert job", zap.String("job", j.Name()), zap.Error(err))
 			return err
 		}
 	}
@@ -48,20 +44,20 @@ func (s *CronJobService) SyncJobDefinitions(ctx context.Context, jobs []cronjob.
 }
 
 func (s *CronJobService) IsJobEnabled(ctx context.Context, name string) (bool, error) {
-	job, err := s.repo.FindByName(ctx, name)
+	job, err := s.Repo.FindByName(ctx, name)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return true, nil
 		}
-		s.logger.Ctx(ctx).Error("failed to find job", zap.String("name", name), zap.Error(err))
+		s.Logger.Ctx(ctx).Error("failed to find job", zap.String("name", name), zap.Error(err))
 		return false, err
 	}
 	return job.Enabled, nil
 }
 
 func (s *CronJobService) SetEnabled(ctx context.Context, name string, enabled bool) error {
-	if err := s.repo.UpdateEnabled(ctx, name, enabled); err != nil {
-		s.logger.Ctx(ctx).Error("failed to update job enabled", zap.String("name", name), zap.Bool("enabled", enabled), zap.Error(err))
+	if err := s.Repo.UpdateEnabled(ctx, name, enabled); err != nil {
+		s.Logger.Ctx(ctx).Error("failed to update job enabled", zap.String("name", name), zap.Bool("enabled", enabled), zap.Error(err))
 		return err
 	}
 	return nil
@@ -74,8 +70,8 @@ func (s *CronJobService) RecordStart(ctx context.Context, jobName, triggeredBy s
 		StartedAt:   time.Now(),
 		TriggeredBy: triggeredBy,
 	}
-	if err := s.repo.CreateExecution(ctx, exec); err != nil {
-		s.logger.Ctx(ctx).Error("failed to record execution start", zap.String("job", jobName), zap.Error(err))
+	if err := s.Repo.CreateExecution(ctx, exec); err != nil {
+		s.Logger.Ctx(ctx).Error("failed to record execution start", zap.String("job", jobName), zap.Error(err))
 		return 0, err
 	}
 	return exec.ID, nil
@@ -90,34 +86,34 @@ func (s *CronJobService) RecordEnd(ctx context.Context, executionID uint64, stat
 	if jobErr != nil {
 		updates["error"] = jobErr.Error()
 	}
-	if err := s.repo.UpdateExecution(ctx, executionID, updates); err != nil {
-		s.logger.Ctx(ctx).Error("failed to record execution end", zap.Uint64("executionID", executionID), zap.Error(err))
+	if err := s.Repo.UpdateExecution(ctx, executionID, updates); err != nil {
+		s.Logger.Ctx(ctx).Error("failed to record execution end", zap.Uint64("executionID", executionID), zap.Error(err))
 		return err
 	}
 	return nil
 }
 
 func (s *CronJobService) UpdateLastRun(ctx context.Context, name string, status string) error {
-	if err := s.repo.UpdateLastRun(ctx, name, status); err != nil {
-		s.logger.Ctx(ctx).Error("failed to update last run", zap.String("name", name), zap.Error(err))
+	if err := s.Repo.UpdateLastRun(ctx, name, status); err != nil {
+		s.Logger.Ctx(ctx).Error("failed to update last run", zap.String("name", name), zap.Error(err))
 		return err
 	}
 	return nil
 }
 
 func (s *CronJobService) ListJobs(ctx context.Context) ([]*model.CronJob, error) {
-	jobs, err := s.repo.ListAll(ctx)
+	jobs, err := s.Repo.ListAll(ctx)
 	if err != nil {
-		s.logger.Ctx(ctx).Error("failed to list jobs", zap.Error(err))
+		s.Logger.Ctx(ctx).Error("failed to list jobs", zap.Error(err))
 		return nil, err
 	}
 	return jobs, nil
 }
 
 func (s *CronJobService) GetJob(ctx context.Context, name string) (*model.CronJob, error) {
-	job, err := s.repo.FindByName(ctx, name)
+	job, err := s.Repo.FindByName(ctx, name)
 	if err != nil {
-		s.logger.Ctx(ctx).Error("failed to get job", zap.String("name", name), zap.Error(err))
+		s.Logger.Ctx(ctx).Error("failed to get job", zap.String("name", name), zap.Error(err))
 		return nil, err
 	}
 	return job, nil
@@ -130,14 +126,10 @@ func (s *CronJobService) ListExecutions(ctx context.Context, jobName string, pag
 	if pageSize < 1 || pageSize > 100 {
 		pageSize = 20
 	}
-	executions, total, err := s.repo.ListExecutions(ctx, jobName, page, pageSize)
+	executions, total, err := s.Repo.ListExecutions(ctx, jobName, page, pageSize)
 	if err != nil {
-		s.logger.Ctx(ctx).Error("failed to list executions", zap.String("job", jobName), zap.Error(err))
+		s.Logger.Ctx(ctx).Error("failed to list executions", zap.String("job", jobName), zap.Error(err))
 		return nil, 0, err
 	}
 	return executions, total, nil
-}
-
-func (s *CronJobService) Logger() *logger.Logger {
-	return s.logger
 }

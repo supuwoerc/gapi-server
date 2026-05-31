@@ -15,13 +15,13 @@ import (
 var CronJobSet = wire.NewSet(
 	ProvideCronConfig,
 	ProvideSystemJobs,
-	dal.NewCronJobDal,
-	service.NewCronJobService,
+	wire.Struct(new(dal.CronJobDal), "*"),
+	wire.Struct(new(service.CronJobService), "*"),
 	wire.Bind(new(service.CronJobRepository), new(*dal.CronJobDal)),
 	wire.Bind(new(cronjob.JobRecorder), new(*service.CronJobService)),
 	wire.Bind(new(v1.CronJobService), new(*service.CronJobService)),
 	cronjob.NewJobManager,
-	v1.NewCronJobHandler,
+	wire.Struct(new(v1.CronJobHandler), "*"),
 )
 
 func ProvideCronConfig(cfg *config.Config) *config.CronConfig {

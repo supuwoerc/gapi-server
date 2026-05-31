@@ -8,11 +8,7 @@ import (
 )
 
 type HealthHandler struct {
-	logger *logger.Logger
-}
-
-func NewHealthHandler(logger *logger.Logger) *HealthHandler {
-	return &HealthHandler{logger: logger}
+	Logger *logger.Logger
 }
 
 // Register registers health routes on the given router group.

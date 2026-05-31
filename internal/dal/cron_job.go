@@ -16,10 +16,6 @@ type CronJobDal struct {
 	DB *gorm.DB
 }
 
-func NewCronJobDal(db *gorm.DB) *CronJobDal {
-	return &CronJobDal{DB: db}
-}
-
 func (d *CronJobDal) getQuery(ctx context.Context) *query.Query {
 	return query.Use(database.TxFromContext(ctx, d.DB))
 }

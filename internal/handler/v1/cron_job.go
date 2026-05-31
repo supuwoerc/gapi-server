@@ -21,12 +21,8 @@ type CronJobService interface {
 }
 
 type CronJobHandler struct {
-	service    CronJobService
-	jobManager *cronjob.JobManager
-}
-
-func NewCronJobHandler(svc CronJobService, jobManager *cronjob.JobManager) *CronJobHandler {
-	return &CronJobHandler{service: svc, jobManager: jobManager}
+	Service    CronJobService
+	JobManager *cronjob.JobManager
 }
 
 // Register registers cron job admin routes.
@@ -52,7 +48,7 @@ func (h *CronJobHandler) Register(r *gin.RouterGroup) {
 // @Failure      500  {object}  response.Response
 // @Router       /api/v1/cron-jobs [get]
 func (h *CronJobHandler) List(c *gin.Context) {
-	jobs, err := h.service.ListJobs(c.Request.Context())
+	jobs, err := h.Service.ListJobs(c.Request.Context())
 	if err != nil {
 		response.FailWithError(c, err)
 		return
@@ -75,7 +71,7 @@ func (h *CronJobHandler) Get(c *gin.Context) {
 		response.ParamsValidateFail(c, err)
 		return
 	}
-	job, err := h.service.GetJob(c.Request.Context(), uri.Name)
+	job, err := h.Service.GetJob(c.Request.Context(), uri.Name)
 	if err != nil {
 		response.FailWithError(c, err)
 		return
@@ -100,11 +96,11 @@ func (h *CronJobHandler) Enable(c *gin.Context) {
 		return
 	}
 	ctx := c.Request.Context()
-	if err := h.service.SetEnabled(ctx, uri.Name, true); err != nil {
+	if err := h.Service.SetEnabled(ctx, uri.Name, true); err != nil {
 		response.FailWithError(c, err)
 		return
 	}
-	if err := h.jobManager.EnableJob(ctx, uri.Name); err != nil {
+	if err := h.JobManager.EnableJob(ctx, uri.Name); err != nil {
 		response.FailWithError(c, err)
 		return
 	}
@@ -134,11 +130,11 @@ func (h *CronJobHandler) Disable(c *gin.Context) {
 		return
 	}
 	ctx := c.Request.Context()
-	if err := h.service.SetEnabled(ctx, uri.Name, false); err != nil {
+	if err := h.Service.SetEnabled(ctx, uri.Name, false); err != nil {
 		response.FailWithError(c, err)
 		return
 	}
-	if err := h.jobManager.DisableJob(ctx, uri.Name, query.Force); err != nil {
+	if err := h.JobManager.DisableJob(ctx, uri.Name, query.Force); err != nil {
 		response.FailWithError(c, err)
 		return
 	}
@@ -167,7 +163,7 @@ func (h *CronJobHandler) Trigger(c *gin.Context) {
 		response.ParamsValidateFail(c, err)
 		return
 	}
-	if err := h.jobManager.TriggerManual(c.Request.Context(), uri.Name, query.Force); err != nil {
+	if err := h.JobManager.TriggerManual(c.Request.Context(), uri.Name, query.Force); err != nil {
 		if stderrors.Is(err, cronjob.ErrJobRunning) {
 			response.FailWithCode(c, response.Busy)
 			return
@@ -201,7 +197,7 @@ func (h *CronJobHandler) ListExecutions(c *gin.Context) {
 		response.ParamsValidateFail(c, err)
 		return
 	}
-	executions, total, err := h.service.ListExecutions(c.Request.Context(), uri.Name, query.Page, query.PageSize)
+	executions, total, err := h.Service.ListExecutions(c.Request.Context(), uri.Name, query.Page, query.PageSize)
 	if err != nil {
 		response.FailWithError(c, err)
 		return
