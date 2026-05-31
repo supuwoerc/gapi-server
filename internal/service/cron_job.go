@@ -20,7 +20,7 @@ type CronJobRepository interface {
 	UpdateEnabled(ctx context.Context, name string, enabled bool) error
 	UpdateLastRun(ctx context.Context, name string, status string) error
 	CreateExecution(ctx context.Context, exec *model.CronJobExecution) error
-	UpdateExecution(ctx context.Context, id uint64, updates map[string]any) error
+	FinishExecution(ctx context.Context, id uint64, status string, endedAt time.Time, errMsg string) error
 	ListExecutions(ctx context.Context, jobName string, page, pageSize int) ([]*model.CronJobExecution, int64, error)
 }
 
@@ -78,15 +78,11 @@ func (s *CronJobService) RecordStart(ctx context.Context, jobName, triggeredBy s
 }
 
 func (s *CronJobService) RecordEnd(ctx context.Context, executionID uint64, status string, jobErr error) error {
-	now := time.Now()
-	updates := map[string]any{
-		"status":   status,
-		"ended_at": now,
-	}
+	errMsg := ""
 	if jobErr != nil {
-		updates["error"] = jobErr.Error()
+		errMsg = jobErr.Error()
 	}
-	if err := s.Repo.UpdateExecution(ctx, executionID, updates); err != nil {
+	if err := s.Repo.FinishExecution(ctx, executionID, status, time.Now(), errMsg); err != nil {
 		s.Logger.Ctx(ctx).Error("failed to record execution end", zap.Uint64("executionID", executionID), zap.Error(err))
 		return err
 	}

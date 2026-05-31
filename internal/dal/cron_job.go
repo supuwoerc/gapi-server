@@ -21,9 +21,14 @@ func (d *CronJobDal) getQuery(ctx context.Context) *query.Query {
 }
 
 func (d *CronJobDal) UpsertJob(ctx context.Context, job *model.CronJob) error {
+	q := d.getQuery(ctx).CronJob
 	return d.DB.WithContext(ctx).Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "name"}},
-		DoUpdates: clause.AssignmentColumns([]string{"interval", "description", "updated_at"}),
+		Columns: []clause.Column{{Name: q.Name.ColumnName().String()}},
+		DoUpdates: clause.AssignmentColumns([]string{
+			q.Interval.ColumnName().String(),
+			q.Description.ColumnName().String(),
+			q.UpdatedAt.ColumnName().String(),
+		}),
 	}).Create(job).Error
 }
 
@@ -46,10 +51,10 @@ func (d *CronJobDal) UpdateEnabled(ctx context.Context, name string, enabled boo
 func (d *CronJobDal) UpdateLastRun(ctx context.Context, name string, status string) error {
 	q := d.getQuery(ctx).CronJob
 	now := time.Now()
-	_, err := q.WithContext(ctx).Where(q.Name.Eq(name)).UpdateColumns(map[string]any{
-		"last_run_at": now,
-		"last_status": status,
-	})
+	_, err := q.WithContext(ctx).Where(q.Name.Eq(name)).UpdateSimple(
+		q.LastRunAt.Value(now),
+		q.LastStatus.Value(status),
+	)
 	return err
 }
 
@@ -58,9 +63,13 @@ func (d *CronJobDal) CreateExecution(ctx context.Context, exec *model.CronJobExe
 	return q.WithContext(ctx).Create(exec)
 }
 
-func (d *CronJobDal) UpdateExecution(ctx context.Context, id uint64, updates map[string]any) error {
+func (d *CronJobDal) FinishExecution(ctx context.Context, id uint64, status string, endedAt time.Time, errMsg string) error {
 	q := d.getQuery(ctx).CronJobExecution
-	_, err := q.WithContext(ctx).Where(q.ID.Eq(id)).UpdateColumns(updates)
+	_, err := q.WithContext(ctx).Where(q.ID.Eq(id)).UpdateSimple(
+		q.Status.Value(status),
+		q.EndedAt.Value(endedAt),
+		q.Error.Value(errMsg),
+	)
 	return err
 }
 
