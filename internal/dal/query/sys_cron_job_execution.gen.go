@@ -8,7 +8,6 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/supuwoerc/gapi-server/internal/dal/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/schema"
@@ -17,6 +16,8 @@ import (
 	"gorm.io/gen/field"
 
 	"gorm.io/plugin/dbresolver"
+
+	"github.com/supuwoerc/gapi-server/internal/dal/model"
 )
 
 func newCronJobExecution(db *gorm.DB, opts ...gen.DOOption) cronJobExecution {
@@ -37,7 +38,7 @@ func newCronJobExecution(db *gorm.DB, opts ...gen.DOOption) cronJobExecution {
 	_cronJobExecution.TriggeredBy = field.NewString(tableName, "triggered_by")
 	_cronJobExecution.CreatedAt = field.NewTime(tableName, "created_at")
 	_cronJobExecution.UpdatedAt = field.NewTime(tableName, "updated_at")
-	_cronJobExecution.DeletedAt = field.NewUint64(tableName, "deleted_at")
+	_cronJobExecution.DeletedAt = field.NewField(tableName, "deleted_at")
 
 	_cronJobExecution.fillFieldMap()
 
@@ -59,7 +60,7 @@ type cronJobExecution struct {
 	TriggeredBy field.String // 触发方式(scheduler/manual)
 	CreatedAt   field.Time
 	UpdatedAt   field.Time
-	DeletedAt   field.Uint64
+	DeletedAt   field.Field
 
 	fieldMap map[string]field.Expr
 }
@@ -86,7 +87,7 @@ func (c *cronJobExecution) updateTableName(table string) *cronJobExecution {
 	c.TriggeredBy = field.NewString(table, "triggered_by")
 	c.CreatedAt = field.NewTime(table, "created_at")
 	c.UpdatedAt = field.NewTime(table, "updated_at")
-	c.DeletedAt = field.NewUint64(table, "deleted_at")
+	c.DeletedAt = field.NewField(table, "deleted_at")
 
 	c.fillFieldMap()
 

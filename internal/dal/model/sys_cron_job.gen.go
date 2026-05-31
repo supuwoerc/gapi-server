@@ -6,22 +6,24 @@ package model
 
 import (
 	"time"
+
+	"gorm.io/plugin/soft_delete"
 )
 
 const TableNameCronJob = "sys_cron_job"
 
 // CronJob 定时任务注册表
 type CronJob struct {
-	ID          uint64     `gorm:"column:id;type:bigint unsigned;primaryKey;autoIncrement:true" json:"id"`
-	Name        string     `gorm:"column:name;type:varchar(128);not null;comment:任务唯一标识" json:"name"`                // 任务唯一标识
-	Description string     `gorm:"column:description;type:varchar(512);not null;comment:任务描述" json:"description"`    // 任务描述
-	Interval    string     `gorm:"column:interval;type:varchar(64);not null;comment:cron 表达式（6位含秒）" json:"interval"` // cron 表达式（6位含秒）
-	Enabled     bool       `gorm:"column:enabled;type:tinyint(1);not null;default:1;comment:是否启用" json:"enabled"`    // 是否启用
-	LastRunAt   *time.Time `gorm:"column:last_run_at;type:datetime;comment:最近一次执行时间" json:"last_run_at"`             // 最近一次执行时间
-	LastStatus  string     `gorm:"column:last_status;type:varchar(16);not null;comment:最近一次执行状态" json:"last_status"` // 最近一次执行状态
-	CreatedAt   time.Time  `gorm:"column:created_at;type:datetime;not null" json:"created_at"`
-	UpdatedAt   time.Time  `gorm:"column:updated_at;type:datetime;not null" json:"updated_at"`
-	DeletedAt   uint64
+	ID          uint64                `gorm:"column:id;type:bigint unsigned;primaryKey;autoIncrement:true" json:"id"`
+	Name        string                `gorm:"column:name;type:varchar(128);not null;uniqueIndex:idx_name,priority:1;comment:任务唯一标识" json:"name"` // 任务唯一标识
+	Description string                `gorm:"column:description;type:varchar(512);not null;comment:任务描述" json:"description"`                     // 任务描述
+	Interval    string                `gorm:"column:interval;type:varchar(64);not null;comment:cron 表达式（6位含秒）" json:"interval"`                  // cron 表达式（6位含秒）
+	Enabled     bool                  `gorm:"column:enabled;type:tinyint(1);not null;default:1;comment:是否启用" json:"enabled"`                     // 是否启用
+	LastRunAt   *time.Time            `gorm:"column:last_run_at;type:datetime;comment:最近一次执行时间" json:"last_run_at"`                              // 最近一次执行时间
+	LastStatus  string                `gorm:"column:last_status;type:varchar(16);not null;comment:最近一次执行状态" json:"last_status"`                  // 最近一次执行状态
+	CreatedAt   time.Time             `gorm:"column:created_at;type:datetime;not null" json:"created_at"`
+	UpdatedAt   time.Time             `gorm:"column:updated_at;type:datetime;not null" json:"updated_at"`
+	DeletedAt   soft_delete.DeletedAt `gorm:"column:deleted_at;type:bigint unsigned;not null;index;softDelete:milli" json:"deleted_at,omitempty"`
 }
 
 // TableName CronJob's table name

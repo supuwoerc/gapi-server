@@ -8,7 +8,6 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/supuwoerc/gapi-server/internal/dal/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/schema"
@@ -17,6 +16,8 @@ import (
 	"gorm.io/gen/field"
 
 	"gorm.io/plugin/dbresolver"
+
+	"github.com/supuwoerc/gapi-server/internal/dal/model"
 )
 
 func newCronJob(db *gorm.DB, opts ...gen.DOOption) cronJob {
@@ -36,7 +37,7 @@ func newCronJob(db *gorm.DB, opts ...gen.DOOption) cronJob {
 	_cronJob.LastStatus = field.NewString(tableName, "last_status")
 	_cronJob.CreatedAt = field.NewTime(tableName, "created_at")
 	_cronJob.UpdatedAt = field.NewTime(tableName, "updated_at")
-	_cronJob.DeletedAt = field.NewUint64(tableName, "deleted_at")
+	_cronJob.DeletedAt = field.NewField(tableName, "deleted_at")
 
 	_cronJob.fillFieldMap()
 
@@ -57,7 +58,7 @@ type cronJob struct {
 	LastStatus  field.String // 最近一次执行状态
 	CreatedAt   field.Time
 	UpdatedAt   field.Time
-	DeletedAt   field.Uint64
+	DeletedAt   field.Field
 
 	fieldMap map[string]field.Expr
 }
@@ -83,7 +84,7 @@ func (c *cronJob) updateTableName(table string) *cronJob {
 	c.LastStatus = field.NewString(table, "last_status")
 	c.CreatedAt = field.NewTime(table, "created_at")
 	c.UpdatedAt = field.NewTime(table, "updated_at")
-	c.DeletedAt = field.NewUint64(table, "deleted_at")
+	c.DeletedAt = field.NewField(table, "deleted_at")
 
 	c.fillFieldMap()
 
