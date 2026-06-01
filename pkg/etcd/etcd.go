@@ -5,14 +5,20 @@ import (
 	"time"
 
 	"github.com/supuwoerc/gapi-server/internal/config"
-	"github.com/supuwoerc/gapi-server/pkg/logger"
 
 	"github.com/pkg/errors"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"go.uber.org/zap"
 )
 
-func NewClient(cfg *config.EtcdConfig, l *logger.Logger) (*clientv3.Client, error) {
+type Logger interface {
+	Info(msg string, fields ...zap.Field)
+	Debug(msg string, fields ...zap.Field)
+	Warn(msg string, fields ...zap.Field)
+	Error(msg string, fields ...zap.Field)
+}
+
+func NewClient(cfg *config.EtcdConfig, l Logger) (*clientv3.Client, error) {
 	client, err := clientv3.New(clientv3.Config{
 		Endpoints:   cfg.Endpoints,
 		DialTimeout: time.Duration(cfg.DialTimeout) * time.Second,

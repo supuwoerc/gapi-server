@@ -40,6 +40,7 @@ func NewLogger(cfg *config.LogConfig) *Logger {
 		zap.AddStacktrace(zapcore.ErrorLevel),
 		zap.Fields(zap.Int("pid", os.Getpid())),
 	)
+	z.Info("logger initialized")
 	return &Logger{Logger: z}
 }
 

@@ -14,4 +14,6 @@ var InfraSet = wire.NewSet(
 	database.NewConnection,
 	pkgRedis.NewClient,
 	etcd.NewClient,
+	etcd.NewDynConfig,
+	wire.Bind(new(etcd.Logger), new(*logger.Logger)),
 )

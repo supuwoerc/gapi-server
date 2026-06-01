@@ -4,18 +4,23 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Config holds all configuration sections.
-type Config struct {
-	Server    ServerConfig    `mapstructure:"server"`     // HTTP 服务配置
-	Database  DatabaseConfig  `mapstructure:"database"`   // 数据库配置
-	Log       LogConfig       `mapstructure:"log"`        // 日志配置
+// HotConfig holds configuration sections that can be hot-reloaded at runtime.
+type HotConfig struct {
 	Cors      CorsConfig      `mapstructure:"cors"`       // 跨域配置
 	RateLimit RateLimitConfig `mapstructure:"rate_limit"` // 限流配置
-	Redis     RedisConfig     `mapstructure:"redis"`      // Redis 配置
-	Locale    LocaleConfig    `mapstructure:"locale"`     // 国际化配置
-	Cron      CronConfig      `mapstructure:"cron"`       // 定时任务配置
-	Etcd      EtcdConfig      `mapstructure:"etcd"`       // Etcd 配置
-	Env       string          `mapstructure:"-"`          // 运行环境 (dev/prod/test)
+}
+
+// Config holds all configuration sections.
+type Config struct {
+	HotConfig `mapstructure:",squash"`
+	Server    ServerConfig   `mapstructure:"server"`   // HTTP 服务配置
+	Database  DatabaseConfig `mapstructure:"database"` // 数据库配置
+	Log       LogConfig      `mapstructure:"log"`      // 日志配置
+	Redis     RedisConfig    `mapstructure:"redis"`    // Redis 配置
+	Locale    LocaleConfig   `mapstructure:"locale"`   // 国际化配置
+	Cron      CronConfig     `mapstructure:"cron"`     // 定时任务配置
+	Etcd      EtcdConfig     `mapstructure:"etcd"`     // Etcd 配置
+	Env       string         `mapstructure:"-"`        // 运行环境 (dev/prod/test)
 }
 
 // ServerConfig holds HTTP server settings.
@@ -81,12 +86,19 @@ type CronConfig struct {
 	ShutdownTimeout int  `mapstructure:"shutdown_timeout"` // 关闭时等待运行中任务的超时时间 (秒)
 }
 
+// DynConfigOptions holds dynamic configuration center settings.
+type DynConfigOptions struct {
+	Enabled bool   `mapstructure:"enabled"` // 是否启用远程配置
+	Key     string `mapstructure:"key"`     // etcd 中存储完整 YAML 的 key
+}
+
 // EtcdConfig holds etcd client connection settings.
 type EtcdConfig struct {
-	Endpoints   []string `mapstructure:"endpoints"`    // etcd 节点地址列表
-	Username    string   `mapstructure:"username"`     // 用户名
-	Password    string   `mapstructure:"password"`     // 密码
-	DialTimeout int      `mapstructure:"dial_timeout"` // 连接超时 (秒)
+	Endpoints   []string         `mapstructure:"endpoints"`    // etcd 节点地址列表
+	Username    string           `mapstructure:"username"`     // 用户名
+	Password    string           `mapstructure:"password"`     // 密码
+	DialTimeout int              `mapstructure:"dial_timeout"` // 连接超时 (秒)
+	DynConfig   DynConfigOptions `mapstructure:"dyn_config"`   // 动态配置中心
 }
 
 // NewConfig unmarshals viper config into Config struct.

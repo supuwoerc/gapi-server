@@ -54,3 +54,6 @@ etcd:
   username: ""                   # 用户名
   password: ""                   # 密码
   dial_timeout: 5                # 连接超时 (秒)
+  dyn_config:
+    enabled: true                # 是否启用远程配置
+    key: "/gapi/config/app.yaml" # etcd 中存储完整 YAML 的 key

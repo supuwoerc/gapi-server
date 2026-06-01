@@ -22,6 +22,10 @@ import (
 	"github.com/supuwoerc/gapi-server/pkg/redis"
 )
 
+import (
+	_ "github.com/supuwoerc/gapi-server/docs"
+)
+
 // Injectors from wire.go:
 
 func WireApp() (*app.App, error) {
@@ -66,12 +70,14 @@ func WireApp() (*app.App, error) {
 	if err != nil {
 		return nil, err
 	}
+	dynConfig := etcd.NewDynConfig(clientv3Client, etcdConfig, viper, configConfig, loggerLogger)
 	appApp := &app.App{
 		Server:     httpServer,
 		Logger:     loggerLogger,
 		DB:         db,
 		Redis:      client,
 		Etcd:       clientv3Client,
+		DynConfig:  dynConfig,
 		JobManager: jobManager,
 	}
 	return appApp, nil
