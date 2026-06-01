@@ -23,7 +23,8 @@ func TestNewConfig(t *testing.T) {
 	v.Set("log.max_backups", 3)
 	v.Set("log.max_age", 7)
 
-	cfg := NewConfig(v)
+	bootstrap := &BootstrapConfig{}
+	cfg := NewConfig(v, nil, bootstrap)
 
 	assert.Equal(t, "127.0.0.1", cfg.Server.Host)
 	assert.Equal(t, 9090, cfg.Server.Port)

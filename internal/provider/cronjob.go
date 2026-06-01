@@ -1,7 +1,6 @@
 package provider
 
 import (
-	"github.com/supuwoerc/gapi-server/internal/config"
 	"github.com/supuwoerc/gapi-server/internal/cronjob"
 	"github.com/supuwoerc/gapi-server/internal/dal"
 	v1 "github.com/supuwoerc/gapi-server/internal/handler/v1"
@@ -13,7 +12,6 @@ import (
 )
 
 var CronJobSet = wire.NewSet(
-	ProvideCronConfig,
 	ProvideSystemJobs,
 	wire.Struct(new(dal.CronJobDal), "*"),
 	wire.Struct(new(service.CronJobService), "*"),
@@ -23,10 +21,6 @@ var CronJobSet = wire.NewSet(
 	cronjob.NewJobManager,
 	wire.Struct(new(v1.CronJobHandler), "*"),
 )
-
-func ProvideCronConfig(cfg *config.Config) *config.CronConfig {
-	return &cfg.Cron
-}
 
 func ProvideSystemJobs(l *logger.Logger) []cronjob.SystemJob {
 	return []cronjob.SystemJob{

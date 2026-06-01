@@ -9,7 +9,6 @@ import (
 	"github.com/supuwoerc/gapi-server/pkg/etcd"
 	"github.com/supuwoerc/gapi-server/pkg/logger"
 
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/suite"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"go.uber.org/zap"
@@ -60,7 +59,7 @@ func (s *DynConfigSuite) newLogger() *logger.Logger {
 	return &logger.Logger{Logger: l}
 }
 
-func (s *DynConfigSuite) newDeps() (*config.EtcdConfig, *viper.Viper, *config.Config) {
+func (s *DynConfigSuite) newDeps() (*config.EtcdConfig, *config.Config) {
 	etcdCfg := &config.EtcdConfig{
 		Endpoints:   []string{"127.0.0.1:2379"},
 		DialTimeout: 5,
@@ -69,19 +68,15 @@ func (s *DynConfigSuite) newDeps() (*config.EtcdConfig, *viper.Viper, *config.Co
 			Key:     testKey,
 		},
 	}
-	v := viper.New()
-	v.SetConfigType("yaml")
-	v.Set("rate_limit.pattern", "100-M")
-	v.Set("rate_limit.prefix", "gapi_limiter")
-	v.Set("cors.origin_prefixes", []string{"http://localhost"})
-
 	appCfg := &config.Config{}
-	_ = v.Unmarshal(appCfg)
-	return etcdCfg, v, appCfg
+	appCfg.RateLimit.Pattern = "100-M"
+	appCfg.RateLimit.Prefix = "gapi_limiter"
+	appCfg.Cors.OriginPrefixes = []string{"http://localhost"}
+	return etcdCfg, appCfg
 }
 
 func (s *DynConfigSuite) TestStartWithRemoteConfig() {
-	etcdCfg, v, appCfg := s.newDeps()
+	etcdCfg, appCfg := s.newDeps()
 
 	remoteYAML := `
 rate_limit:
@@ -96,21 +91,28 @@ database:
 	_, err := s.client.Put(s.ctx, testKey, remoteYAML)
 	s.Require().NoError(err)
 
-	dc := etcd.NewDynConfig(s.client, etcdCfg, v, appCfg, s.newLogger())
+	dc := etcd.NewDynConfig(s.client, etcdCfg, appCfg, s.newLogger())
 	err = dc.Start(s.ctx)
 	s.Require().NoError(err)
 	defer dc.Stop()
 
+	// 首次加载已在 NewViper 中完成，Start 只启动 watch
+	// 模拟热更新
+	_, err = s.client.Put(s.ctx, testKey, remoteYAML)
+	s.Require().NoError(err)
+	time.Sleep(1 * time.Second)
+
 	s.Equal("500-M", appCfg.RateLimit.Pattern)
 	s.Equal("remote_limiter", appCfg.RateLimit.Prefix)
 	s.Contains(appCfg.Cors.OriginPrefixes, "https://example.com")
-	s.Equal("secret_from_etcd", appCfg.Database.Password)
+	// database.password 不可热更新
+	s.Equal("", appCfg.Database.Password)
 }
 
 func (s *DynConfigSuite) TestStartWithoutRemoteConfig() {
-	etcdCfg, v, appCfg := s.newDeps()
+	etcdCfg, appCfg := s.newDeps()
 
-	dc := etcd.NewDynConfig(s.client, etcdCfg, v, appCfg, s.newLogger())
+	dc := etcd.NewDynConfig(s.client, etcdCfg, appCfg, s.newLogger())
 	err := dc.Start(s.ctx)
 	s.Require().NoError(err)
 	defer dc.Stop()
@@ -119,23 +121,13 @@ func (s *DynConfigSuite) TestStartWithoutRemoteConfig() {
 }
 
 func (s *DynConfigSuite) TestHotReloadOnlyUpdatesAllowedFields() {
-	etcdCfg, v, appCfg := s.newDeps()
+	etcdCfg, appCfg := s.newDeps()
+	appCfg.Database.Password = "initial_pw"
 
-	initialYAML := `
-rate_limit:
-  pattern: "100-M"
-database:
-  password: "initial_pw"
-`
-	_, err := s.client.Put(s.ctx, testKey, initialYAML)
-	s.Require().NoError(err)
-
-	dc := etcd.NewDynConfig(s.client, etcdCfg, v, appCfg, s.newLogger())
-	err = dc.Start(s.ctx)
+	dc := etcd.NewDynConfig(s.client, etcdCfg, appCfg, s.newLogger())
+	err := dc.Start(s.ctx)
 	s.Require().NoError(err)
 	defer dc.Stop()
-
-	s.Equal("initial_pw", appCfg.Database.Password)
 
 	updatedYAML := `
 rate_limit:
@@ -159,10 +151,10 @@ cors:
 }
 
 func (s *DynConfigSuite) TestDisabled() {
-	etcdCfg, v, appCfg := s.newDeps()
+	etcdCfg, appCfg := s.newDeps()
 	etcdCfg.DynConfig.Enabled = false
 
-	dc := etcd.NewDynConfig(s.client, etcdCfg, v, appCfg, s.newLogger())
+	dc := etcd.NewDynConfig(s.client, etcdCfg, appCfg, s.newLogger())
 	err := dc.Start(s.ctx)
 	s.Require().NoError(err)
 	dc.Stop()

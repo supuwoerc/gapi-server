@@ -8,19 +8,25 @@ import (
 
 var ConfigSet = wire.NewSet(
 	config.NewViper,
+	config.NewBootstrapConfig,
 	config.NewConfig,
 	ProvideLogConfig,
+	ProvideEtcdConfig,
 	ProvideDBConfig,
 	ProvideServerConfig,
 	ProvideRedisConfig,
 	ProvideCorsConfig,
 	ProvideRateLimitConfig,
 	ProvideLocaleConfig,
-	ProvideEtcdConfig,
+	ProvideCronConfig,
 )
 
-func ProvideLogConfig(cfg *config.Config) *config.LogConfig {
+func ProvideLogConfig(cfg *config.BootstrapConfig) *config.LogConfig {
 	return &cfg.Log
+}
+
+func ProvideEtcdConfig(cfg *config.BootstrapConfig) *config.EtcdConfig {
+	return &cfg.Etcd
 }
 
 func ProvideDBConfig(cfg *config.Config) *config.DatabaseConfig {
@@ -47,6 +53,6 @@ func ProvideLocaleConfig(cfg *config.Config) *config.LocaleConfig {
 	return &cfg.Locale
 }
 
-func ProvideEtcdConfig(cfg *config.Config) *config.EtcdConfig {
-	return &cfg.Etcd
+func ProvideCronConfig(cfg *config.Config) *config.CronConfig {
+	return &cfg.Cron
 }

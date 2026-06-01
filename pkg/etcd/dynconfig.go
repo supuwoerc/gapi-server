@@ -16,7 +16,6 @@ import (
 type DynConfig struct {
 	client *clientv3.Client
 	cfg    *config.EtcdConfig
-	v      *viper.Viper
 	appCfg *config.Config
 	logger Logger
 	key    string
@@ -25,7 +24,7 @@ type DynConfig struct {
 	done   chan struct{}
 }
 
-func NewDynConfig(client *clientv3.Client, cfg *config.EtcdConfig, v *viper.Viper, appCfg *config.Config, l Logger) *DynConfig {
+func NewDynConfig(client *clientv3.Client, cfg *config.EtcdConfig, appCfg *config.Config, l Logger) *DynConfig {
 	key := cfg.DynConfig.Key
 	if key == "" {
 		key = "/gapi/config/app.yaml"
@@ -33,7 +32,6 @@ func NewDynConfig(client *clientv3.Client, cfg *config.EtcdConfig, v *viper.Vipe
 	return &DynConfig{
 		client: client,
 		cfg:    cfg,
-		v:      v,
 		appCfg: appCfg,
 		logger: l,
 		key:    key,
@@ -43,36 +41,19 @@ func NewDynConfig(client *clientv3.Client, cfg *config.EtcdConfig, v *viper.Vipe
 
 func (d *DynConfig) Start(ctx context.Context) error {
 	if !d.cfg.DynConfig.Enabled {
-		d.logger.Info("etcd dynconfig: disabled by config")
+		d.logger.Info("etcd dynconfig: watch disabled by config")
 		return nil
 	}
 
 	resp, err := d.client.Get(ctx, d.key)
 	if err != nil {
-		return errors.Wrap(err, "etcd dynconfig: get remote config")
-	}
-
-	if len(resp.Kvs) > 0 {
-		value := resp.Kvs[0].Value
-		if err := d.v.MergeConfig(bytes.NewReader(value)); err != nil {
-			return errors.Wrap(err, "etcd dynconfig: merge remote config")
-		}
-		if err := d.v.Unmarshal(d.appCfg); err != nil {
-			return errors.Wrap(err, "etcd dynconfig: unmarshal after merge")
-		}
-		d.logger.Info("etcd dynconfig: remote config loaded and merged",
-			zap.String("key", d.key),
-			zap.Int("bytes", len(value)),
-		)
-	} else {
-		d.logger.Info("etcd dynconfig: no remote config found, using local only",
-			zap.String("key", d.key),
-		)
+		return errors.Wrap(err, "etcd dynconfig: get current revision")
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
 	d.cancel = cancel
 	go d.watch(ctx, resp.Header.Revision+1)
+	d.logger.Info("etcd dynconfig: watching for changes", zap.String("key", d.key))
 	return nil
 }
 

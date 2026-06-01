@@ -9,11 +9,15 @@ import (
 	"github.com/google/wire"
 )
 
-var InfraSet = wire.NewSet(
+var BaseInfraSet = wire.NewSet(
 	logger.NewLogger,
+	etcd.NewClient,
+	wire.Bind(new(etcd.Logger), new(*logger.Logger)),
 	database.NewConnection,
 	pkgRedis.NewClient,
-	etcd.NewClient,
+)
+
+var InfraSet = wire.NewSet(
+	BaseInfraSet,
 	etcd.NewDynConfig,
-	wire.Bind(new(etcd.Logger), new(*logger.Logger)),
 )

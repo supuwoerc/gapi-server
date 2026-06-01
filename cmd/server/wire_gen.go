@@ -22,20 +22,22 @@ import (
 	"github.com/supuwoerc/gapi-server/pkg/redis"
 )
 
-import (
-	_ "github.com/supuwoerc/gapi-server/docs"
-)
-
 // Injectors from wire.go:
 
 func WireApp() (*app.App, error) {
 	viper := config.NewViper()
-	configConfig := config.NewConfig(viper)
-	serverConfig := provider.ProvideServerConfig(configConfig)
-	logConfig := provider.ProvideLogConfig(configConfig)
+	bootstrapConfig := config.NewBootstrapConfig(viper)
+	etcdConfig := provider.ProvideEtcdConfig(bootstrapConfig)
+	logConfig := provider.ProvideLogConfig(bootstrapConfig)
 	loggerLogger := logger.NewLogger(logConfig)
+	client, err := etcd.NewClient(etcdConfig, loggerLogger)
+	if err != nil {
+		return nil, err
+	}
+	configConfig := config.NewConfig(viper, client, bootstrapConfig)
+	serverConfig := provider.ProvideServerConfig(configConfig)
 	redisConfig := provider.ProvideRedisConfig(configConfig)
-	client, err := redis.NewClient(redisConfig, loggerLogger)
+	redisClient, err := redis.NewClient(redisConfig, loggerLogger)
 	if err != nil {
 		return nil, err
 	}
@@ -63,20 +65,15 @@ func WireApp() (*app.App, error) {
 	}
 	v2 := provider.ProvideV1Registrars(healthHandler, cronJobHandler)
 	v1Handlers := router.NewV1Handlers(v2)
-	engine := router.NewEngine(loggerLogger, configConfig, client, v1Handlers)
+	engine := router.NewEngine(loggerLogger, configConfig, redisClient, v1Handlers)
 	httpServer := server.NewHttpServer(serverConfig, engine, loggerLogger)
-	etcdConfig := provider.ProvideEtcdConfig(configConfig)
-	clientv3Client, err := etcd.NewClient(etcdConfig, loggerLogger)
-	if err != nil {
-		return nil, err
-	}
-	dynConfig := etcd.NewDynConfig(clientv3Client, etcdConfig, viper, configConfig, loggerLogger)
+	dynConfig := etcd.NewDynConfig(client, etcdConfig, configConfig, loggerLogger)
 	appApp := &app.App{
 		Server:     httpServer,
 		Logger:     loggerLogger,
 		DB:         db,
-		Redis:      client,
-		Etcd:       clientv3Client,
+		Redis:      redisClient,
+		Etcd:       client,
 		DynConfig:  dynConfig,
 		JobManager: jobManager,
 	}

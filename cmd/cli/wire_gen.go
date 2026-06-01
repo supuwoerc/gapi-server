@@ -11,6 +11,7 @@ import (
 	"github.com/supuwoerc/gapi-server/internal/config"
 	"github.com/supuwoerc/gapi-server/internal/provider"
 	"github.com/supuwoerc/gapi-server/pkg/database"
+	"github.com/supuwoerc/gapi-server/pkg/etcd"
 	"github.com/supuwoerc/gapi-server/pkg/logger"
 	"github.com/supuwoerc/gapi-server/pkg/redis"
 )
@@ -19,23 +20,30 @@ import (
 
 func WireCli() (*app.Cli, error) {
 	viper := config.NewViper()
-	configConfig := config.NewConfig(viper)
-	logConfig := provider.ProvideLogConfig(configConfig)
+	bootstrapConfig := config.NewBootstrapConfig(viper)
+	logConfig := provider.ProvideLogConfig(bootstrapConfig)
 	loggerLogger := logger.NewLogger(logConfig)
+	etcdConfig := provider.ProvideEtcdConfig(bootstrapConfig)
+	client, err := etcd.NewClient(etcdConfig, loggerLogger)
+	if err != nil {
+		return nil, err
+	}
+	configConfig := config.NewConfig(viper, client, bootstrapConfig)
 	databaseConfig := provider.ProvideDBConfig(configConfig)
 	db, err := database.NewConnection(databaseConfig, loggerLogger)
 	if err != nil {
 		return nil, err
 	}
 	redisConfig := provider.ProvideRedisConfig(configConfig)
-	client, err := redis.NewClient(redisConfig, loggerLogger)
+	redisClient, err := redis.NewClient(redisConfig, loggerLogger)
 	if err != nil {
 		return nil, err
 	}
 	cli := &app.Cli{
 		Logger: loggerLogger,
 		DB:     db,
-		Redis:  client,
+		Redis:  redisClient,
+		Etcd:   client,
 	}
 	return cli, nil
 }

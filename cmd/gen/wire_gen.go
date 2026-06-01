@@ -11,6 +11,7 @@ import (
 	"github.com/supuwoerc/gapi-server/internal/config"
 	"github.com/supuwoerc/gapi-server/internal/provider"
 	"github.com/supuwoerc/gapi-server/pkg/database"
+	"github.com/supuwoerc/gapi-server/pkg/etcd"
 	"github.com/supuwoerc/gapi-server/pkg/logger"
 )
 
@@ -18,9 +19,15 @@ import (
 
 func WireGen() (*app.Gen, error) {
 	viper := config.NewViper()
-	configConfig := config.NewConfig(viper)
-	logConfig := provider.ProvideLogConfig(configConfig)
+	bootstrapConfig := config.NewBootstrapConfig(viper)
+	logConfig := provider.ProvideLogConfig(bootstrapConfig)
 	loggerLogger := logger.NewLogger(logConfig)
+	etcdConfig := provider.ProvideEtcdConfig(bootstrapConfig)
+	client, err := etcd.NewClient(etcdConfig, loggerLogger)
+	if err != nil {
+		return nil, err
+	}
+	configConfig := config.NewConfig(viper, client, bootstrapConfig)
 	databaseConfig := provider.ProvideDBConfig(configConfig)
 	db, err := database.NewConnection(databaseConfig, loggerLogger)
 	if err != nil {
@@ -29,6 +36,7 @@ func WireGen() (*app.Gen, error) {
 	gen := &app.Gen{
 		Logger: loggerLogger,
 		DB:     db,
+		Etcd:   client,
 	}
 	return gen, nil
 }
