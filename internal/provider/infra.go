@@ -12,6 +12,7 @@ import (
 var BaseInfraSet = wire.NewSet(
 	logger.NewLogger,
 	etcd.NewClient,
+	etcd.NewLocker,
 	wire.Bind(new(etcd.Logger), new(*logger.Logger)),
 	database.NewConnection,
 	pkgRedis.NewClient,
