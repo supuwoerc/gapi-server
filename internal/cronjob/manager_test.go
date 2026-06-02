@@ -8,7 +8,6 @@ import (
 
 	"github.com/supuwoerc/gapi-server/internal/config"
 	"github.com/supuwoerc/gapi-server/pkg/etcd"
-	"github.com/supuwoerc/gapi-server/pkg/logger"
 
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
@@ -57,7 +56,7 @@ type ManagerSuite struct {
 func (s *ManagerSuite) newManager(locker DistLocker, job *countingJob) *JobManager {
 	l, _ := zap.NewDevelopment()
 	cfg := &config.CronConfig{Enabled: true, ShutdownTimeout: 5}
-	return NewJobManager(&logger.Logger{Logger: l}, &mockRecorder{}, cfg, []SystemJob{job}, locker)
+	return NewJobManager(l, &mockRecorder{}, cfg, []SystemJob{job}, locker)
 }
 
 func (s *ManagerSuite) TestExecutesWhenLockAcquired() {

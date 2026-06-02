@@ -22,10 +22,6 @@ import (
 	"github.com/supuwoerc/gapi-server/pkg/redis"
 )
 
-import (
-	_ "github.com/supuwoerc/gapi-server/docs"
-)
-
 // Injectors from wire.go:
 
 func WireApp() (*app.App, error) {

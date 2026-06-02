@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/supuwoerc/gapi-server/internal/config"
-	"github.com/supuwoerc/gapi-server/pkg/logger"
 
 	"github.com/pkg/errors"
 	"github.com/robfig/cron/v3"
@@ -24,7 +23,7 @@ type JobRecorder interface {
 
 type JobManager struct {
 	cron      *cron.Cron
-	logger    *logger.Logger
+	logger    Logger
 	recorder  JobRecorder
 	cfg       *config.CronConfig
 	jobs      []SystemJob
@@ -34,7 +33,7 @@ type JobManager struct {
 	locker    DistLocker
 }
 
-func NewJobManager(l *logger.Logger, recorder JobRecorder, cfg *config.CronConfig, jobs []SystemJob, locker DistLocker) *JobManager {
+func NewJobManager(l Logger, recorder JobRecorder, cfg *config.CronConfig, jobs []SystemJob, locker DistLocker) *JobManager {
 	return &JobManager{
 		logger:    l,
 		recorder:  recorder,

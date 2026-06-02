@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 )
 
 type ExecutionMode int
@@ -28,6 +29,14 @@ const (
 )
 
 var ErrJobRunning = errors.New("job is currently running")
+
+// Logger 日志接口，解耦对具体 logger 实现的依赖。
+type Logger interface {
+	Info(msg string, fields ...zap.Field)
+	Debug(msg string, fields ...zap.Field)
+	Warn(msg string, fields ...zap.Field)
+	Error(msg string, fields ...zap.Field)
+}
 
 type SystemJob interface {
 	Name() string

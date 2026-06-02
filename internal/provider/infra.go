@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"github.com/supuwoerc/gapi-server/internal/cronjob"
 	"github.com/supuwoerc/gapi-server/pkg/database"
 	"github.com/supuwoerc/gapi-server/pkg/etcd"
 	"github.com/supuwoerc/gapi-server/pkg/logger"
@@ -14,6 +15,7 @@ var BaseInfraSet = wire.NewSet(
 	etcd.NewClient,
 	etcd.NewLocker,
 	wire.Bind(new(etcd.Logger), new(*logger.Logger)),
+	wire.Bind(new(cronjob.Logger), new(*logger.Logger)),
 	database.NewConnection,
 	pkgRedis.NewClient,
 )
