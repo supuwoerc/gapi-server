@@ -53,6 +53,11 @@ func main() {
 	g.ApplyBasic(
 		g.GenerateModelAs("sys_cron_job", "CronJob"),
 		g.GenerateModelAs("sys_cron_job_execution", "CronJobExecution"),
+		g.GenerateModelAs("sys_user", "User"),
+		g.GenerateModelAs("sys_user_role", "UserRole"),
+		g.GenerateModelAs("sys_role", "Role"),
+		g.GenerateModelAs("sys_role_permission", "RolePermission"),
+		g.GenerateModelAs("sys_permission", "Permission"),
 	)
 	g.Execute()
 }

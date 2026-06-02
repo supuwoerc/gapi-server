@@ -20,6 +20,11 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		db:               db,
 		CronJob:          newCronJob(db, opts...),
 		CronJobExecution: newCronJobExecution(db, opts...),
+		Permission:       newPermission(db, opts...),
+		Role:             newRole(db, opts...),
+		RolePermission:   newRolePermission(db, opts...),
+		User:             newUser(db, opts...),
+		UserRole:         newUserRole(db, opts...),
 	}
 }
 
@@ -28,6 +33,11 @@ type Query struct {
 
 	CronJob          cronJob
 	CronJobExecution cronJobExecution
+	Permission       permission
+	Role             role
+	RolePermission   rolePermission
+	User             user
+	UserRole         userRole
 }
 
 func (q *Query) Available() bool { return q.db != nil }
@@ -37,6 +47,11 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		db:               db,
 		CronJob:          q.CronJob.clone(db),
 		CronJobExecution: q.CronJobExecution.clone(db),
+		Permission:       q.Permission.clone(db),
+		Role:             q.Role.clone(db),
+		RolePermission:   q.RolePermission.clone(db),
+		User:             q.User.clone(db),
+		UserRole:         q.UserRole.clone(db),
 	}
 }
 
@@ -53,18 +68,33 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		db:               db,
 		CronJob:          q.CronJob.replaceDB(db),
 		CronJobExecution: q.CronJobExecution.replaceDB(db),
+		Permission:       q.Permission.replaceDB(db),
+		Role:             q.Role.replaceDB(db),
+		RolePermission:   q.RolePermission.replaceDB(db),
+		User:             q.User.replaceDB(db),
+		UserRole:         q.UserRole.replaceDB(db),
 	}
 }
 
 type queryCtx struct {
 	CronJob          ICronJobDo
 	CronJobExecution ICronJobExecutionDo
+	Permission       IPermissionDo
+	Role             IRoleDo
+	RolePermission   IRolePermissionDo
+	User             IUserDo
+	UserRole         IUserRoleDo
 }
 
 func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
 		CronJob:          q.CronJob.WithContext(ctx),
 		CronJobExecution: q.CronJobExecution.WithContext(ctx),
+		Permission:       q.Permission.WithContext(ctx),
+		Role:             q.Role.WithContext(ctx),
+		RolePermission:   q.RolePermission.WithContext(ctx),
+		User:             q.User.WithContext(ctx),
+		UserRole:         q.UserRole.WithContext(ctx),
 	}
 }
 
