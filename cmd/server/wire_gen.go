@@ -22,6 +22,10 @@ import (
 	"github.com/supuwoerc/gapi-server/pkg/redis"
 )
 
+import (
+	_ "github.com/supuwoerc/gapi-server/docs"
+)
+
 // Injectors from wire.go:
 
 func WireApp() (*app.App, error) {
@@ -58,7 +62,9 @@ func WireApp() (*app.App, error) {
 	}
 	cronConfig := provider.ProvideCronConfig(configConfig)
 	v := provider.ProvideSystemJobs(loggerLogger)
-	jobManager := cronjob.NewJobManager(loggerLogger, cronJobService, cronConfig, v)
+	locker := etcd.NewLocker(client, loggerLogger)
+	lockerAdapter := cronjob.NewLockerAdapter(locker)
+	jobManager := cronjob.NewJobManager(loggerLogger, cronJobService, cronConfig, v, lockerAdapter)
 	cronJobHandler := &v1.CronJobHandler{
 		Service:    cronJobService,
 		JobManager: jobManager,

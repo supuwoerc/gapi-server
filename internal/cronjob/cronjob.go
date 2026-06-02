@@ -35,3 +35,13 @@ type SystemJob interface {
 	ExecutionMode() ExecutionMode
 	Handle(ctx context.Context) error
 }
+
+// LockResult 表示一次加锁结果，调用 Unlock 释放。
+type LockResult interface {
+	Unlock(ctx context.Context) error
+}
+
+// DistLocker 分布式锁抽象，用于多实例 job 执行前抢锁协调。
+type DistLocker interface {
+	TryLock(ctx context.Context, key string) (LockResult, error)
+}

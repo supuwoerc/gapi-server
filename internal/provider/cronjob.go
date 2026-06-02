@@ -13,6 +13,8 @@ import (
 
 var CronJobSet = wire.NewSet(
 	ProvideSystemJobs,
+	cronjob.NewLockerAdapter,
+	wire.Bind(new(cronjob.DistLocker), new(*cronjob.LockerAdapter)),
 	wire.Struct(new(dal.CronJobDal), "*"),
 	wire.Struct(new(service.CronJobService), "*"),
 	wire.Bind(new(service.CronJobRepository), new(*dal.CronJobDal)),

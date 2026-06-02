@@ -31,9 +31,10 @@ type JobManager struct {
 	entryMap  map[string]cron.EntryID
 	cancelMap map[string]context.CancelFunc
 	mu        sync.RWMutex
+	locker    DistLocker
 }
 
-func NewJobManager(l *logger.Logger, recorder JobRecorder, cfg *config.CronConfig, jobs []SystemJob) *JobManager {
+func NewJobManager(l *logger.Logger, recorder JobRecorder, cfg *config.CronConfig, jobs []SystemJob, locker DistLocker) *JobManager {
 	return &JobManager{
 		logger:    l,
 		recorder:  recorder,
@@ -41,6 +42,7 @@ func NewJobManager(l *logger.Logger, recorder JobRecorder, cfg *config.CronConfi
 		jobs:      jobs,
 		entryMap:  make(map[string]cron.EntryID),
 		cancelMap: make(map[string]context.CancelFunc),
+		locker:    locker,
 	}
 }
 
@@ -187,6 +189,17 @@ func (m *JobManager) wrapJob(j SystemJob) cron.Job {
 			delete(m.cancelMap, j.Name())
 			m.mu.Unlock()
 		}()
+
+		if m.locker != nil {
+			lock, err := m.locker.TryLock(ctx, j.Name())
+			if err != nil {
+				m.logger.Debug("cron: skipping job, another instance is running",
+					zap.String("job", j.Name()))
+				return
+			}
+			defer func() { _ = lock.Unlock(ctx) }()
+		}
+
 		m.executeWithRecording(ctx, j, TriggerByScheduler)
 	})
 
