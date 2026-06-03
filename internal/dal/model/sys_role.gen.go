@@ -24,6 +24,9 @@ type Role struct {
 	CreatedAt   time.Time             `gorm:"column:created_at;type:datetime;not null" json:"created_at"`
 	UpdatedAt   time.Time             `gorm:"column:updated_at;type:datetime;not null" json:"updated_at"`
 	DeletedAt   soft_delete.DeletedAt `gorm:"column:deleted_at;type:bigint unsigned;not null;index;softDelete:milli" json:"deleted_at,omitempty"`
+	Permissions []Permission          `gorm:"many2many:sys_role_permission" json:"permissions"`
+	Parent      *Role                 `gorm:"foreignKey:ParentID" json:"parent"`
+	Children    []Role                `gorm:"foreignKey:ParentID" json:"children"`
 }
 
 // TableName Role's table name

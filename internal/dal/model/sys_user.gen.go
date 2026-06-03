@@ -16,7 +16,7 @@ const TableNameUser = "sys_user"
 type User struct {
 	ID             uint64                `gorm:"column:id;type:bigint unsigned;primaryKey;autoIncrement:true" json:"id"`
 	Username       string                `gorm:"column:username;type:varchar(64);not null;uniqueIndex:idx_username,priority:1;comment:登录名" json:"username"` // 登录名
-	PasswordHash   string                `gorm:"column:password_hash;type:varchar(256);not null;comment:密码哈希" json:"password_hash"`                         // 密码哈希
+	PasswordHash   string                `gorm:"column:password_hash;type:varchar(256);not null;comment:密码哈希" json:"-"`                                     // 密码哈希
 	Email          string                `gorm:"column:email;type:varchar(128);not null;comment:邮箱" json:"email"`                                           // 邮箱
 	Phone          string                `gorm:"column:phone;type:varchar(32);not null;comment:手机号" json:"phone"`                                           // 手机号
 	Avatar         string                `gorm:"column:avatar;type:varchar(512);not null;comment:头像URL" json:"avatar"`                                      // 头像URL
@@ -27,6 +27,7 @@ type User struct {
 	CreatedAt      time.Time             `gorm:"column:created_at;type:datetime;not null" json:"created_at"`
 	UpdatedAt      time.Time             `gorm:"column:updated_at;type:datetime;not null" json:"updated_at"`
 	DeletedAt      soft_delete.DeletedAt `gorm:"column:deleted_at;type:bigint unsigned;not null;index;softDelete:milli" json:"deleted_at,omitempty"`
+	Roles          []Role                `gorm:"many2many:sys_user_role" json:"roles"`
 }
 
 // TableName User's table name

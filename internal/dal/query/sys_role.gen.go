@@ -38,6 +38,23 @@ func newRole(db *gorm.DB, opts ...gen.DOOption) role {
 	_role.CreatedAt = field.NewTime(tableName, "created_at")
 	_role.UpdatedAt = field.NewTime(tableName, "updated_at")
 	_role.DeletedAt = field.NewField(tableName, "deleted_at")
+	_role.Permissions = roleManyToManyPermissions{
+		db: db.Session(&gorm.Session{}),
+
+		RelationField: field.NewRelation("Permissions", "model.Permission"),
+	}
+
+	_role.Parent = roleBelongsToParent{
+		db: db.Session(&gorm.Session{}),
+
+		RelationField: field.NewRelation("Parent", "model.Role"),
+	}
+
+	_role.Children = roleHasManyChildren{
+		db: db.Session(&gorm.Session{}),
+
+		RelationField: field.NewRelation("Children", "model.Role"),
+	}
 
 	_role.fillFieldMap()
 
@@ -59,6 +76,11 @@ type role struct {
 	CreatedAt   field.Time
 	UpdatedAt   field.Time
 	DeletedAt   field.Field
+	Permissions roleManyToManyPermissions
+
+	Parent roleBelongsToParent
+
+	Children roleHasManyChildren
 
 	fieldMap map[string]field.Expr
 }
@@ -109,7 +131,7 @@ func (r *role) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (r *role) fillFieldMap() {
-	r.fieldMap = make(map[string]field.Expr, 10)
+	r.fieldMap = make(map[string]field.Expr, 13)
 	r.fieldMap["id"] = r.ID
 	r.fieldMap["name"] = r.Name
 	r.fieldMap["code"] = r.Code
@@ -120,16 +142,269 @@ func (r *role) fillFieldMap() {
 	r.fieldMap["created_at"] = r.CreatedAt
 	r.fieldMap["updated_at"] = r.UpdatedAt
 	r.fieldMap["deleted_at"] = r.DeletedAt
+
 }
 
 func (r role) clone(db *gorm.DB) role {
 	r.roleDo.ReplaceConnPool(db.Statement.ConnPool)
+	r.Permissions.db = db.Session(&gorm.Session{Initialized: true})
+	r.Permissions.db.Statement.ConnPool = db.Statement.ConnPool
+	r.Parent.db = db.Session(&gorm.Session{Initialized: true})
+	r.Parent.db.Statement.ConnPool = db.Statement.ConnPool
+	r.Children.db = db.Session(&gorm.Session{Initialized: true})
+	r.Children.db.Statement.ConnPool = db.Statement.ConnPool
 	return r
 }
 
 func (r role) replaceDB(db *gorm.DB) role {
 	r.roleDo.ReplaceDB(db)
+	r.Permissions.db = db.Session(&gorm.Session{})
+	r.Parent.db = db.Session(&gorm.Session{})
+	r.Children.db = db.Session(&gorm.Session{})
 	return r
+}
+
+type roleManyToManyPermissions struct {
+	db *gorm.DB
+
+	field.RelationField
+}
+
+func (a roleManyToManyPermissions) Where(conds ...field.Expr) *roleManyToManyPermissions {
+	if len(conds) == 0 {
+		return &a
+	}
+
+	exprs := make([]clause.Expression, 0, len(conds))
+	for _, cond := range conds {
+		exprs = append(exprs, cond.BeCond().(clause.Expression))
+	}
+	a.db = a.db.Clauses(clause.Where{Exprs: exprs})
+	return &a
+}
+
+func (a roleManyToManyPermissions) WithContext(ctx context.Context) *roleManyToManyPermissions {
+	a.db = a.db.WithContext(ctx)
+	return &a
+}
+
+func (a roleManyToManyPermissions) Session(session *gorm.Session) *roleManyToManyPermissions {
+	a.db = a.db.Session(session)
+	return &a
+}
+
+func (a roleManyToManyPermissions) Model(m *model.Role) *roleManyToManyPermissionsTx {
+	return &roleManyToManyPermissionsTx{a.db.Model(m).Association(a.Name())}
+}
+
+func (a roleManyToManyPermissions) Unscoped() *roleManyToManyPermissions {
+	a.db = a.db.Unscoped()
+	return &a
+}
+
+type roleManyToManyPermissionsTx struct{ tx *gorm.Association }
+
+func (a roleManyToManyPermissionsTx) Find() (result []*model.Permission, err error) {
+	return result, a.tx.Find(&result)
+}
+
+func (a roleManyToManyPermissionsTx) Append(values ...*model.Permission) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Append(targetValues...)
+}
+
+func (a roleManyToManyPermissionsTx) Replace(values ...*model.Permission) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Replace(targetValues...)
+}
+
+func (a roleManyToManyPermissionsTx) Delete(values ...*model.Permission) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Delete(targetValues...)
+}
+
+func (a roleManyToManyPermissionsTx) Clear() error {
+	return a.tx.Clear()
+}
+
+func (a roleManyToManyPermissionsTx) Count() int64 {
+	return a.tx.Count()
+}
+
+func (a roleManyToManyPermissionsTx) Unscoped() *roleManyToManyPermissionsTx {
+	a.tx = a.tx.Unscoped()
+	return &a
+}
+
+type roleBelongsToParent struct {
+	db *gorm.DB
+
+	field.RelationField
+}
+
+func (a roleBelongsToParent) Where(conds ...field.Expr) *roleBelongsToParent {
+	if len(conds) == 0 {
+		return &a
+	}
+
+	exprs := make([]clause.Expression, 0, len(conds))
+	for _, cond := range conds {
+		exprs = append(exprs, cond.BeCond().(clause.Expression))
+	}
+	a.db = a.db.Clauses(clause.Where{Exprs: exprs})
+	return &a
+}
+
+func (a roleBelongsToParent) WithContext(ctx context.Context) *roleBelongsToParent {
+	a.db = a.db.WithContext(ctx)
+	return &a
+}
+
+func (a roleBelongsToParent) Session(session *gorm.Session) *roleBelongsToParent {
+	a.db = a.db.Session(session)
+	return &a
+}
+
+func (a roleBelongsToParent) Model(m *model.Role) *roleBelongsToParentTx {
+	return &roleBelongsToParentTx{a.db.Model(m).Association(a.Name())}
+}
+
+func (a roleBelongsToParent) Unscoped() *roleBelongsToParent {
+	a.db = a.db.Unscoped()
+	return &a
+}
+
+type roleBelongsToParentTx struct{ tx *gorm.Association }
+
+func (a roleBelongsToParentTx) Find() (result *model.Role, err error) {
+	return result, a.tx.Find(&result)
+}
+
+func (a roleBelongsToParentTx) Append(values ...*model.Role) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Append(targetValues...)
+}
+
+func (a roleBelongsToParentTx) Replace(values ...*model.Role) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Replace(targetValues...)
+}
+
+func (a roleBelongsToParentTx) Delete(values ...*model.Role) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Delete(targetValues...)
+}
+
+func (a roleBelongsToParentTx) Clear() error {
+	return a.tx.Clear()
+}
+
+func (a roleBelongsToParentTx) Count() int64 {
+	return a.tx.Count()
+}
+
+func (a roleBelongsToParentTx) Unscoped() *roleBelongsToParentTx {
+	a.tx = a.tx.Unscoped()
+	return &a
+}
+
+type roleHasManyChildren struct {
+	db *gorm.DB
+
+	field.RelationField
+}
+
+func (a roleHasManyChildren) Where(conds ...field.Expr) *roleHasManyChildren {
+	if len(conds) == 0 {
+		return &a
+	}
+
+	exprs := make([]clause.Expression, 0, len(conds))
+	for _, cond := range conds {
+		exprs = append(exprs, cond.BeCond().(clause.Expression))
+	}
+	a.db = a.db.Clauses(clause.Where{Exprs: exprs})
+	return &a
+}
+
+func (a roleHasManyChildren) WithContext(ctx context.Context) *roleHasManyChildren {
+	a.db = a.db.WithContext(ctx)
+	return &a
+}
+
+func (a roleHasManyChildren) Session(session *gorm.Session) *roleHasManyChildren {
+	a.db = a.db.Session(session)
+	return &a
+}
+
+func (a roleHasManyChildren) Model(m *model.Role) *roleHasManyChildrenTx {
+	return &roleHasManyChildrenTx{a.db.Model(m).Association(a.Name())}
+}
+
+func (a roleHasManyChildren) Unscoped() *roleHasManyChildren {
+	a.db = a.db.Unscoped()
+	return &a
+}
+
+type roleHasManyChildrenTx struct{ tx *gorm.Association }
+
+func (a roleHasManyChildrenTx) Find() (result []*model.Role, err error) {
+	return result, a.tx.Find(&result)
+}
+
+func (a roleHasManyChildrenTx) Append(values ...*model.Role) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Append(targetValues...)
+}
+
+func (a roleHasManyChildrenTx) Replace(values ...*model.Role) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Replace(targetValues...)
+}
+
+func (a roleHasManyChildrenTx) Delete(values ...*model.Role) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Delete(targetValues...)
+}
+
+func (a roleHasManyChildrenTx) Clear() error {
+	return a.tx.Clear()
+}
+
+func (a roleHasManyChildrenTx) Count() int64 {
+	return a.tx.Count()
+}
+
+func (a roleHasManyChildrenTx) Unscoped() *roleHasManyChildrenTx {
+	a.tx = a.tx.Unscoped()
+	return &a
 }
 
 type roleDo struct{ gen.DO }
