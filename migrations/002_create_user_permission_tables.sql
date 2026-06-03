@@ -14,6 +14,7 @@ CREATE TABLE sys_user (
     updated_at DATETIME NOT NULL,
     deleted_at BIGINT UNSIGNED NOT NULL DEFAULT 0,
     UNIQUE INDEX idx_username (username),
+    UNIQUE INDEX idx_email (email),
     INDEX idx_deleted_at (deleted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
 
@@ -59,7 +60,7 @@ CREATE TABLE sys_user_role (
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
     deleted_at BIGINT UNSIGNED NOT NULL DEFAULT 0,
-    UNIQUE INDEX uk_user_role (user_id, role_id),
+    UNIQUE INDEX uk_user_role (user_id, role_id, deleted_at),
     INDEX idx_role_id (role_id),
     INDEX idx_deleted_at (deleted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户角色关联表';
@@ -73,7 +74,7 @@ CREATE TABLE sys_role_permission (
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
     deleted_at BIGINT UNSIGNED NOT NULL DEFAULT 0,
-    UNIQUE INDEX uk_role_perm (role_id, permission_id),
+    UNIQUE INDEX uk_role_perm (role_id, permission_id, deleted_at),
     INDEX idx_permission_id (permission_id),
     INDEX idx_deleted_at (deleted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色权限关联表';
