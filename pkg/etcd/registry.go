@@ -153,3 +153,7 @@ func (r *Registry) keepAlive(ctx context.Context) {
 		}
 	}
 }
+
+func (r *Registry) OnReady(ctx context.Context) error {
+	return r.Register(ctx)
+}

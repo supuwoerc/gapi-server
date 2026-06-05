@@ -37,12 +37,6 @@ func (a *App) Run() {
 		a.Logger.Fatal("failed to start job manager", zap.Error(err))
 	}
 
-	a.Server.OnReady = func() {
-		if err := a.Registry.Register(context.Background()); err != nil {
-			a.Logger.Fatal("failed to register service", zap.Error(err))
-		}
-	}
-
 	a.Server.Run()
 }
 

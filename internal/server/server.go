@@ -23,13 +23,13 @@ type HttpServer struct {
 	server  *http.Server
 	logger  *logger.Logger
 	isLinux bool
-	OnReady func()
+	hooks   []IServerHook
 }
 
-func NewHttpServer(cfg *config.ServerConfig, handler http.Handler, l *logger.Logger) *HttpServer {
+func NewHttpServer(cfg *config.ServerConfig, handler http.Handler, l *logger.Logger, hooks []IServerHook) *HttpServer {
 	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 	srv := &http.Server{Addr: addr, Handler: handler}
-	return &HttpServer{server: srv, logger: l, isLinux: isLinux}
+	return &HttpServer{server: srv, logger: l, isLinux: isLinux, hooks: hooks}
 }
 
 func (s *HttpServer) Run() {
@@ -74,7 +74,7 @@ func (s *HttpServer) graceRunServe() {
 }
 
 func (s *HttpServer) invokeOnReady() {
-	if s.OnReady == nil {
+	if len(s.hooks) == 0 {
 		return
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -85,13 +85,17 @@ func (s *HttpServer) invokeOnReady() {
 		conn, err := net.DialTimeout("tcp", s.server.Addr, 100*time.Millisecond)
 		if err == nil {
 			_ = conn.Close()
-			s.OnReady()
+			for _, h := range s.hooks {
+				if err := h.OnReady(ctx); err != nil {
+					s.logger.Fatal("hook OnReady failed", zap.Error(err))
+				}
+			}
 			return
 		}
 		s.logger.Warn("server not ready, retrying", zap.Int("attempt", attempt), zap.Error(err))
 		select {
 		case <-ctx.Done():
-			s.logger.Error("server did not become ready in time, skipping OnReady")
+			s.logger.Error("server did not become ready in time, skipping hooks")
 			return
 		case <-time.After(1 * time.Second):
 		}
