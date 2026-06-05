@@ -22,6 +22,10 @@ import (
 	"github.com/supuwoerc/gapi-server/pkg/redis"
 )
 
+import (
+	_ "github.com/supuwoerc/gapi-server/docs"
+)
+
 // Injectors from wire.go:
 
 func WireApp() (*app.App, error) {
@@ -70,6 +74,8 @@ func WireApp() (*app.App, error) {
 	engine := router.NewEngine(loggerLogger, configConfig, redisClient, v1Handlers)
 	httpServer := server.NewHttpServer(serverConfig, engine, loggerLogger)
 	dynConfig := etcd.NewDynConfig(client, etcdConfig, configConfig, loggerLogger)
+	registry := etcd.NewRegistry(client, etcdConfig, serverConfig, loggerLogger)
+	discovery := etcd.NewDiscovery(client, etcdConfig, loggerLogger)
 	appApp := &app.App{
 		Server:     httpServer,
 		Logger:     loggerLogger,
@@ -77,6 +83,8 @@ func WireApp() (*app.App, error) {
 		Redis:      redisClient,
 		Etcd:       client,
 		DynConfig:  dynConfig,
+		Registry:   registry,
+		Discovery:  discovery,
 		JobManager: jobManager,
 	}
 	return appApp, nil

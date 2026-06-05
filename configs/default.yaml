@@ -57,3 +57,12 @@ etcd:
   dyn_config:
     enabled: true                # 是否启用远程配置
     key: "/gapi/config/app.yaml" # etcd 中存储完整 YAML 的 key
+  registry:
+    enabled: true                # 是否启用服务注册
+    service_name: "gapi-server"  # 注册的服务名
+    ttl: 10                      # 租约 TTL (秒)
+    prefix: "/gapi/services"     # key 前缀
+    weight: 100                  # 实例权重
+  discovery:
+    prefixes:                    # 要监听的 prefix 列表
+      - "/gapi/services"

@@ -14,6 +14,7 @@ var BaseInfraSet = wire.NewSet(
 	logger.NewLogger,
 	etcd.NewClient,
 	etcd.NewLocker,
+	etcd.NewDiscovery,
 	wire.Bind(new(etcd.Logger), new(*logger.Logger)),
 	wire.Bind(new(cronjob.Logger), new(*logger.Logger)),
 	database.NewConnection,
@@ -23,4 +24,5 @@ var BaseInfraSet = wire.NewSet(
 var InfraSet = wire.NewSet(
 	BaseInfraSet,
 	etcd.NewDynConfig,
+	etcd.NewRegistry,
 )

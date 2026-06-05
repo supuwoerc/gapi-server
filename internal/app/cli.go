@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/supuwoerc/gapi-server/pkg/etcd"
 	"github.com/supuwoerc/gapi-server/pkg/logger"
 
 	"github.com/redis/go-redis/v9"
@@ -10,10 +11,11 @@ import (
 )
 
 type Cli struct {
-	Logger *logger.Logger
-	DB     *gorm.DB
-	Redis  *redis.Client
-	Etcd   *clientv3.Client
+	Logger    *logger.Logger
+	DB        *gorm.DB
+	Redis     *redis.Client
+	Etcd      *clientv3.Client
+	Discovery *etcd.Discovery
 }
 
 func (c *Cli) Close() {
@@ -21,6 +23,7 @@ func (c *Cli) Close() {
 		_ = c.Logger.Sync()
 	}()
 	defer c.Logger.Info("cli clean is executed")
+	c.Discovery.Stop()
 	if sqlDB, err := c.DB.DB(); err != nil {
 		c.Logger.Error("failed to get sql.DB", zap.Error(err))
 	} else if err := sqlDB.Close(); err != nil {

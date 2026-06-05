@@ -15,6 +15,20 @@ type BootstrapConfig struct {
 	Log  LogConfig  `mapstructure:"log"`
 }
 
+// RegistryConfig holds service registry settings.
+type RegistryConfig struct {
+	Enabled     bool   `mapstructure:"enabled"`      // 是否启用服务注册
+	ServiceName string `mapstructure:"service_name"` // 注册的服务名
+	TTL         int    `mapstructure:"ttl"`          // 租约 TTL (秒)
+	Prefix      string `mapstructure:"prefix"`       // key 前缀
+	Weight      int    `mapstructure:"weight"`       // 实例权重
+}
+
+// DiscoveryConfig holds service discovery settings.
+type DiscoveryConfig struct {
+	Prefixes []string `mapstructure:"prefixes"` // 要监听的 prefix 列表
+}
+
 // EtcdConfig holds etcd client connection settings.
 type EtcdConfig struct {
 	Endpoints   []string         `mapstructure:"endpoints"`    // etcd 节点地址列表
@@ -22,6 +36,8 @@ type EtcdConfig struct {
 	Password    string           `mapstructure:"password"`     // 密码
 	DialTimeout int              `mapstructure:"dial_timeout"` // 连接超时 (秒)
 	DynConfig   DynConfigOptions `mapstructure:"dyn_config"`   // 动态配置中心
+	Registry    RegistryConfig   `mapstructure:"registry"`     // 服务注册配置
+	Discovery   DiscoveryConfig  `mapstructure:"discovery"`    // 服务发现配置
 }
 
 // LogConfig holds logging settings.

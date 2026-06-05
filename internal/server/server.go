@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"os/signal"
 	"syscall"
@@ -22,6 +23,7 @@ type HttpServer struct {
 	server  *http.Server
 	logger  *logger.Logger
 	isLinux bool
+	OnReady func()
 }
 
 func NewHttpServer(cfg *config.ServerConfig, handler http.Handler, l *logger.Logger) *HttpServer {
@@ -41,12 +43,16 @@ func (s *HttpServer) Run() {
 func (s *HttpServer) runServer() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
 	go func() {
 		s.logger.Info("server running", zap.String("addr", s.server.Addr))
 		if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			s.logger.Fatal("server error", zap.Error(err))
 		}
 	}()
+
+	go s.invokeOnReady()
+
 	<-ctx.Done()
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -58,8 +64,36 @@ func (s *HttpServer) runServer() {
 
 func (s *HttpServer) graceRunServe() {
 	s.logger.Info("grace server running", zap.String("addr", s.server.Addr))
+
+	go s.invokeOnReady()
+
 	if err := gracehttp.Serve(s.server); err != nil {
 		s.logger.Fatal("grace server error", zap.Error(err))
 	}
 	s.logger.Info("grace server stopped")
+}
+
+func (s *HttpServer) invokeOnReady() {
+	if s.OnReady == nil {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	attempt := 0
+	for {
+		attempt++
+		conn, err := net.DialTimeout("tcp", s.server.Addr, 100*time.Millisecond)
+		if err == nil {
+			_ = conn.Close()
+			s.OnReady()
+			return
+		}
+		s.logger.Warn("server not ready, retrying", zap.Int("attempt", attempt), zap.Error(err))
+		select {
+		case <-ctx.Done():
+			s.logger.Error("server did not become ready in time, skipping OnReady")
+			return
+		case <-time.After(1 * time.Second):
+		}
+	}
 }

@@ -21,6 +21,8 @@ type App struct {
 	Redis      *redis.Client
 	Etcd       *clientv3.Client
 	DynConfig  *etcd.DynConfig
+	Registry   *etcd.Registry
+	Discovery  *etcd.Discovery
 	JobManager *cronjob.JobManager
 }
 
@@ -28,9 +30,19 @@ func (a *App) Run() {
 	if err := a.DynConfig.Start(context.Background()); err != nil {
 		a.Logger.Fatal("failed to start dynamic config", zap.Error(err))
 	}
+	if err := a.Discovery.Start(context.Background()); err != nil {
+		a.Logger.Fatal("failed to start discovery", zap.Error(err))
+	}
 	if err := a.JobManager.Start(context.Background()); err != nil {
 		a.Logger.Fatal("failed to start job manager", zap.Error(err))
 	}
+
+	a.Server.OnReady = func() {
+		if err := a.Registry.Register(context.Background()); err != nil {
+			a.Logger.Fatal("failed to register service", zap.Error(err))
+		}
+	}
+
 	a.Server.Run()
 }
 
@@ -39,7 +51,9 @@ func (a *App) Close() {
 		_ = a.Logger.Sync()
 	}()
 	defer a.Logger.Info("app clean is executed")
+	a.Registry.Deregister()
 	a.JobManager.Stop()
+	a.Discovery.Stop()
 	a.DynConfig.Stop()
 	if sqlDB, err := a.DB.DB(); err != nil {
 		a.Logger.Error("failed to get sql.DB", zap.Error(err))
