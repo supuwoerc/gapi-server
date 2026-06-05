@@ -111,3 +111,7 @@ func (d *DynConfig) Stop() {
 	}
 	d.logger.Info("etcd dynconfig: stopped")
 }
+
+func (d *DynConfig) OnStart(ctx context.Context) error { return d.Start(ctx) }
+func (d *DynConfig) OnReady(context.Context) error     { return nil }
+func (d *DynConfig) OnStop(context.Context) error      { d.Stop(); return nil }

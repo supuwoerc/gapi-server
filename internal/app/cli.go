@@ -1,7 +1,8 @@
 package app
 
 import (
-	"github.com/supuwoerc/gapi-server/pkg/etcd"
+	"context"
+
 	"github.com/supuwoerc/gapi-server/pkg/logger"
 
 	"github.com/redis/go-redis/v9"
@@ -10,12 +11,30 @@ import (
 	"gorm.io/gorm"
 )
 
+type ICliHook interface {
+	OnInit(ctx context.Context) error
+	OnClose(ctx context.Context) error
+}
+
+type BaseCliHook struct{}
+
+func (BaseCliHook) OnInit(context.Context) error  { return nil }
+func (BaseCliHook) OnClose(context.Context) error { return nil }
+
 type Cli struct {
-	Logger    *logger.Logger
-	DB        *gorm.DB
-	Redis     *redis.Client
-	Etcd      *clientv3.Client
-	Discovery *etcd.Discovery
+	Logger *logger.Logger
+	DB     *gorm.DB
+	Redis  *redis.Client
+	Etcd   *clientv3.Client
+	Hooks  []ICliHook
+}
+
+func (c *Cli) Init() {
+	for _, h := range c.Hooks {
+		if err := h.OnInit(context.Background()); err != nil {
+			c.Logger.Fatal("cli hook OnInit failed", zap.Error(err))
+		}
+	}
 }
 
 func (c *Cli) Close() {
@@ -23,11 +42,15 @@ func (c *Cli) Close() {
 		_ = c.Logger.Sync()
 	}()
 	defer c.Logger.Info("cli clean is executed")
-	c.Discovery.Stop()
-	if sqlDB, err := c.DB.DB(); err != nil {
-		c.Logger.Error("failed to get sql.DB", zap.Error(err))
-	} else if err := sqlDB.Close(); err != nil {
-		c.Logger.Error("failed to close database", zap.Error(err))
+	for i := len(c.Hooks) - 1; i >= 0; i-- {
+		if err := c.Hooks[i].OnClose(context.Background()); err != nil {
+			c.Logger.Error("cli hook OnClose failed", zap.Error(err))
+		}
+	}
+	if db, err := c.DB.DB(); err != nil {
+		c.Logger.Error("failed to get cli sql.DB", zap.Error(err))
+	} else if err := db.Close(); err != nil {
+		c.Logger.Error("failed to close cli database", zap.Error(err))
 	}
 	if err := c.Redis.Close(); err != nil {
 		c.Logger.Error("failed to close redis", zap.Error(err))

@@ -17,6 +17,18 @@ import (
 	"go.uber.org/zap"
 )
 
+type IServerHook interface {
+	OnStart(ctx context.Context) error
+	OnReady(ctx context.Context) error
+	OnStop(ctx context.Context) error
+}
+
+type BaseServerHook struct{}
+
+func (BaseServerHook) OnStart(context.Context) error { return nil }
+func (BaseServerHook) OnReady(context.Context) error { return nil }
+func (BaseServerHook) OnStop(context.Context) error  { return nil }
+
 var isLinux = false
 
 type HttpServer struct {
@@ -33,6 +45,12 @@ func NewHttpServer(cfg *config.ServerConfig, handler http.Handler, l *logger.Log
 }
 
 func (s *HttpServer) Run() {
+	ctx := context.Background()
+	for _, h := range s.hooks {
+		if err := h.OnStart(ctx); err != nil {
+			s.logger.Fatal("hook OnStart failed", zap.Error(err))
+		}
+	}
 	if s.isLinux {
 		s.graceRunServe()
 	} else {
@@ -60,6 +78,7 @@ func (s *HttpServer) runServer() {
 		s.logger.Error("server shutdown error", zap.Error(err))
 	}
 	s.logger.Info("server stopped")
+	s.invokeOnStop()
 }
 
 func (s *HttpServer) graceRunServe() {
@@ -71,6 +90,7 @@ func (s *HttpServer) graceRunServe() {
 		s.logger.Fatal("grace server error", zap.Error(err))
 	}
 	s.logger.Info("grace server stopped")
+	s.invokeOnStop()
 }
 
 func (s *HttpServer) invokeOnReady() {
@@ -98,6 +118,15 @@ func (s *HttpServer) invokeOnReady() {
 			s.logger.Error("server did not become ready in time, skipping hooks")
 			return
 		case <-time.After(1 * time.Second):
+		}
+	}
+}
+
+func (s *HttpServer) invokeOnStop() {
+	ctx := context.Background()
+	for i := len(s.hooks) - 1; i >= 0; i-- {
+		if err := s.hooks[i].OnStop(ctx); err != nil {
+			s.logger.Error("hook OnStop failed", zap.Error(err))
 		}
 	}
 }

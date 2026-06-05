@@ -13,7 +13,7 @@ import (
 func WireCli() (*app.Cli, error) {
 	wire.Build(
 		provider.ConfigSet,
-		provider.BaseInfraSet,
+		provider.CliInfraSet,
 		wire.Struct(new(app.Cli), "*"),
 	)
 	return nil, nil

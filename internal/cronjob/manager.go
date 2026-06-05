@@ -105,6 +105,10 @@ func (m *JobManager) Stop() {
 	}
 }
 
+func (m *JobManager) OnStart(ctx context.Context) error { return m.Start(ctx) }
+func (m *JobManager) OnReady(context.Context) error     { return nil }
+func (m *JobManager) OnStop(context.Context) error      { m.Stop(); return nil }
+
 func (m *JobManager) TriggerManual(ctx context.Context, jobName string, force bool) error {
 	for _, j := range m.jobs {
 		if j.Name() == jobName {

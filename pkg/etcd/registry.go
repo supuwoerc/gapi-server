@@ -154,6 +154,6 @@ func (r *Registry) keepAlive(ctx context.Context) {
 	}
 }
 
-func (r *Registry) OnReady(ctx context.Context) error {
-	return r.Register(ctx)
-}
+func (r *Registry) OnStart(context.Context) error     { return nil }
+func (r *Registry) OnReady(ctx context.Context) error { return r.Register(ctx) }
+func (r *Registry) OnStop(context.Context) error      { r.Deregister(); return nil }

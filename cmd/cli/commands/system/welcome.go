@@ -21,6 +21,7 @@ func newWelcomeCmd(cliFactory CliFactory) *cobra.Command {
 				return errors.Wrap(err, "failed to initialize cli")
 			}
 			defer cli.Close()
+			cli.Init()
 
 			cli.Logger.Info("welcome cli is running...")
 

@@ -40,12 +40,13 @@ func WireCli() (*app.Cli, error) {
 		return nil, err
 	}
 	discovery := etcd.NewDiscovery(client, etcdConfig, loggerLogger)
+	v := provider.ProvideCliHooks(discovery)
 	cli := &app.Cli{
-		Logger:    loggerLogger,
-		DB:        db,
-		Redis:     redisClient,
-		Etcd:      client,
-		Discovery: discovery,
+		Logger: loggerLogger,
+		DB:     db,
+		Redis:  redisClient,
+		Etcd:   client,
+		Hooks:  v,
 	}
 	return cli, nil
 }

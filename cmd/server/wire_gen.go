@@ -72,21 +72,17 @@ func WireApp() (*app.App, error) {
 	v2 := provider.ProvideV1Registrars(healthHandler, cronJobHandler)
 	v1Handlers := router.NewV1Handlers(v2)
 	engine := router.NewEngine(loggerLogger, configConfig, redisClient, v1Handlers)
-	registry := etcd.NewRegistry(client, etcdConfig, serverConfig, loggerLogger)
-	v3 := provider.ProvideServerHooks(registry)
-	httpServer := server.NewHttpServer(serverConfig, engine, loggerLogger, v3)
 	dynConfig := etcd.NewDynConfig(client, etcdConfig, configConfig, loggerLogger)
 	discovery := etcd.NewDiscovery(client, etcdConfig, loggerLogger)
+	registry := etcd.NewRegistry(client, etcdConfig, serverConfig, loggerLogger)
+	v3 := provider.ProvideServerHooks(dynConfig, discovery, jobManager, registry)
+	httpServer := server.NewHttpServer(serverConfig, engine, loggerLogger, v3)
 	appApp := &app.App{
-		Server:     httpServer,
-		Logger:     loggerLogger,
-		DB:         db,
-		Redis:      redisClient,
-		Etcd:       client,
-		DynConfig:  dynConfig,
-		Registry:   registry,
-		Discovery:  discovery,
-		JobManager: jobManager,
+		Server: httpServer,
+		Logger: loggerLogger,
+		DB:     db,
+		Redis:  redisClient,
+		Etcd:   client,
 	}
 	return appApp, nil
 }

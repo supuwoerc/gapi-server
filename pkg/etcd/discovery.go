@@ -187,3 +187,10 @@ func (d *Discovery) Stop() {
 	d.wg.Wait()
 	d.logger.Info("etcd discovery: stopped")
 }
+
+func (d *Discovery) OnStart(ctx context.Context) error { return d.Start(ctx) }
+func (d *Discovery) OnReady(context.Context) error     { return nil }
+func (d *Discovery) OnStop(context.Context) error      { d.Stop(); return nil }
+
+func (d *Discovery) OnInit(ctx context.Context) error { return d.Start(ctx) }
+func (d *Discovery) OnClose(context.Context) error    { d.Stop(); return nil }

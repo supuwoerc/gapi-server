@@ -27,3 +27,8 @@ var InfraSet = wire.NewSet(
 	etcd.NewRegistry,
 	ProvideServerHooks,
 )
+
+var CliInfraSet = wire.NewSet(
+	BaseInfraSet,
+	ProvideCliHooks,
+)
