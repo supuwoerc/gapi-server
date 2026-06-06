@@ -21,6 +21,9 @@ var AuthSet = wire.NewSet(
 )
 
 func ProvideJWTManager(cfg *config.JWTConfig) *jwt.Manager {
+	if cfg.Secret == "" {
+		panic("jwt.secret must not be empty, configure it via etcd or local config")
+	}
 	return jwt.NewManager(cfg.Secret, cfg.Issuer, cfg.AccessTokenExpiry, cfg.RefreshTokenExpiry)
 }
 

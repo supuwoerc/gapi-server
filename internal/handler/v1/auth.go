@@ -138,7 +138,11 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 // @Success      200  {object}  response.Response
 // @Router       /api/v1/auth/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
-	userID, _ := middleware.CurrentUserID(c)
+	userID, ok := middleware.CurrentUserID(c)
+	if !ok {
+		response.FailWithCode(c, response.InvalidToken)
+		return
+	}
 	h.Service.Logout(c.Request.Context(), userID)
 	response.Success(c)
 }
@@ -152,7 +156,11 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 // @Success      200  {object}  response.BasicResponse[resp.LoginResponse]
 // @Router       /api/v1/auth/profile [get]
 func (h *AuthHandler) Profile(c *gin.Context) {
-	userID, _ := middleware.CurrentUserID(c)
+	userID, ok := middleware.CurrentUserID(c)
+	if !ok {
+		response.FailWithCode(c, response.InvalidToken)
+		return
+	}
 	data, err := h.Service.GetProfile(c.Request.Context(), userID)
 	if err != nil {
 		response.FailWithError(c, err)
