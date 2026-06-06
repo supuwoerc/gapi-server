@@ -1,0 +1,32 @@
+package provider
+
+import (
+	"github.com/supuwoerc/gapi-server/internal/config"
+	"github.com/supuwoerc/gapi-server/internal/dal"
+	v1 "github.com/supuwoerc/gapi-server/internal/handler/v1"
+	"github.com/supuwoerc/gapi-server/internal/middleware"
+	"github.com/supuwoerc/gapi-server/internal/service"
+	"github.com/supuwoerc/gapi-server/pkg/jwt"
+
+	"github.com/google/wire"
+)
+
+var AuthSet = wire.NewSet(
+	ProvideJWTManager,
+	wire.Struct(new(dal.UserDal), "*"),
+	wire.Struct(new(service.AuthService), "*"),
+	wire.Bind(new(service.UserRepository), new(*dal.UserDal)),
+	wire.Bind(new(v1.AuthServiceInterface), new(*service.AuthService)),
+	ProvideAuthHandler,
+)
+
+func ProvideJWTManager(cfg *config.JWTConfig) *jwt.Manager {
+	return jwt.NewManager(cfg.Secret, cfg.Issuer, cfg.AccessTokenExpiry, cfg.RefreshTokenExpiry)
+}
+
+func ProvideAuthHandler(svc v1.AuthServiceInterface, m *jwt.Manager) *v1.AuthHandler {
+	return &v1.AuthHandler{
+		Service: svc,
+		JWTAuth: middleware.JWTAuth(m),
+	}
+}

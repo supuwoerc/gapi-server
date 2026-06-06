@@ -7,5 +7,11 @@
   {"id": "recoveryError", "other": "严重错误，请联系管理员"},
   {"id": "internalError", "other": "服务内部错误，请稍后再试"},
   {"id": "timeoutErr", "other": "处理时间过长，操作取消"},
-  {"id": "busy", "other": "请求过于频繁，请稍后再试"}
+  {"id": "busy", "other": "请求过于频繁，请稍后再试"},
+  {"id": "userAlreadyExists", "other": "用户已存在"},
+  {"id": "invalidCredential", "other": "邮箱或密码错误"},
+  {"id": "userDisabled", "other": "账户已禁用"},
+  {"id": "userLocked", "other": "账户已锁定，请稍后再试"},
+  {"id": "tokenExpired", "other": "Token 已过期"},
+  {"id": "refreshTokenUsed", "other": "Refresh Token 已失效"}
 ]

@@ -69,7 +69,19 @@ func WireApp() (*app.App, error) {
 		Service:    cronJobService,
 		JobManager: jobManager,
 	}
-	v2 := provider.ProvideV1Registrars(healthHandler, cronJobHandler)
+	userDal := &dal.UserDal{
+		DB: db,
+	}
+	jwtConfig := provider.ProvideJWTConfig(configConfig)
+	manager := provider.ProvideJWTManager(jwtConfig)
+	authService := &service.AuthService{
+		UserRepo:    userDal,
+		JWTManager:  manager,
+		RedisClient: redisClient,
+		Logger:      loggerLogger,
+	}
+	authHandler := provider.ProvideAuthHandler(authService, manager)
+	v2 := provider.ProvideV1Registrars(healthHandler, cronJobHandler, authHandler)
 	v1Handlers := router.NewV1Handlers(v2)
 	engine := router.NewEngine(loggerLogger, configConfig, redisClient, v1Handlers)
 	dynConfig := etcd.NewDynConfig(client, etcdConfig, configConfig, loggerLogger)

@@ -7,5 +7,11 @@
   {"id": "recoveryError", "other": "Internal error, please contact administrator"},
   {"id": "internalError", "other": "Internal error, please try again later"},
   {"id": "timeoutErr", "other": "Request timeout"},
-  {"id": "busy", "other": "Too many requests, please try again later"}
+  {"id": "busy", "other": "Too many requests, please try again later"},
+  {"id": "userAlreadyExists", "other": "User already exists"},
+  {"id": "invalidCredential", "other": "Invalid email or password"},
+  {"id": "userDisabled", "other": "Account is disabled"},
+  {"id": "userLocked", "other": "Account is locked, please try again later"},
+  {"id": "tokenExpired", "other": "Token expired"},
+  {"id": "refreshTokenUsed", "other": "Refresh token is invalid"}
 ]

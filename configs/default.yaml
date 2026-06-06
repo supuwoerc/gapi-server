@@ -48,6 +48,12 @@ cron:
   enabled: true                  # 是否启用定时任务
   shutdown_timeout: 30           # 关闭时等待运行中任务的超时时间 (秒)
 
+jwt:
+  secret: ""                         # JWT 签名密钥 (生产环境必须通过 etcd 注入)
+  access_token_expiry: 15            # access_token 有效期 (分钟)
+  refresh_token_expiry: 168          # refresh_token 有效期 (小时, 168 = 7天)
+  issuer: "gapi-server"             # 签发者
+
 etcd:
   endpoints:                     # etcd 节点地址列表
     - "127.0.0.1:2379"

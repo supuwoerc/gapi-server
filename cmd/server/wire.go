@@ -15,6 +15,7 @@ func WireApp() (*app.App, error) {
 		provider.ConfigSet,
 		provider.InfraSet,
 		provider.CronJobSet,
+		provider.AuthSet,
 		provider.HandlerSet,
 		provider.ServerSet,
 		wire.Struct(new(app.App), "*"),
