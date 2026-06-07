@@ -18,7 +18,7 @@ type AuthServiceInterface interface {
 	Login(ctx context.Context, email, password string) (*jwt.TokenPair, *model.User, error)
 	RefreshToken(ctx context.Context, refreshToken string) (*jwt.TokenPair, error)
 	Logout(ctx context.Context, userID uint64)
-	GetProfile(ctx context.Context, userID uint64) (*resp.LoginResponse, error)
+	GetProfile(ctx context.Context, userID uint64) (*model.User, error)
 }
 
 type AuthHandler struct {
@@ -161,10 +161,25 @@ func (h *AuthHandler) Profile(c *gin.Context) {
 		response.FailWithCode(c, response.InvalidToken)
 		return
 	}
-	data, err := h.Service.GetProfile(c.Request.Context(), userID)
+	user, err := h.Service.GetProfile(c.Request.Context(), userID)
 	if err != nil {
 		response.FailWithError(c, err)
 		return
 	}
-	response.SuccessWithData(c, data)
+	roles := make([]string, 0, len(user.Roles))
+	for _, r := range user.Roles {
+		roles = append(roles, r.Code)
+	}
+	response.SuccessWithData(c, resp.LoginResponse{
+		User: resp.UserInfo{
+			Name:   user.Username,
+			Email:  user.Email,
+			Avatar: user.Avatar,
+			Bio:    "",
+		},
+		Role:             roles,
+		MenuPermissions:  []string{},
+		RoutePermissions: []string{},
+		CompletedTours:   []string{},
+	})
 }

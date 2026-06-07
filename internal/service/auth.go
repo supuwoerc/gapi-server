@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/supuwoerc/gapi-server/internal/dal/model"
-	"github.com/supuwoerc/gapi-server/internal/handler/v1/resp"
 	"github.com/supuwoerc/gapi-server/pkg/database"
 	"github.com/supuwoerc/gapi-server/pkg/jwt"
 	"github.com/supuwoerc/gapi-server/pkg/logger"
@@ -165,26 +164,11 @@ func (s *AuthService) Logout(ctx context.Context, userID uint64) {
 	}
 }
 
-func (s *AuthService) GetProfile(ctx context.Context, userID uint64) (*resp.LoginResponse, error) {
+func (s *AuthService) GetProfile(ctx context.Context, userID uint64) (*model.User, error) {
 	user, err := s.UserRepo.FindByIDWithRoles(ctx, userID)
 	if err != nil {
 		s.Logger.Ctx(ctx).Error("find user with roles failed", zap.Error(err))
 		return nil, response.InternalError
 	}
-	roles := make([]string, 0, len(user.Roles))
-	for _, r := range user.Roles {
-		roles = append(roles, r.Code)
-	}
-	return &resp.LoginResponse{
-		User: resp.UserInfo{
-			Name:   user.Username,
-			Email:  user.Email,
-			Avatar: user.Avatar,
-			Bio:    "",
-		},
-		Role:             roles,
-		MenuPermissions:  []string{},
-		RoutePermissions: []string{},
-		CompletedTours:   []string{},
-	}, nil
+	return user, nil
 }
