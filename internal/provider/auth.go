@@ -6,6 +6,7 @@ import (
 	v1 "github.com/supuwoerc/gapi-server/internal/handler/v1"
 	"github.com/supuwoerc/gapi-server/internal/middleware"
 	"github.com/supuwoerc/gapi-server/internal/service"
+	"github.com/supuwoerc/gapi-server/pkg/database"
 	"github.com/supuwoerc/gapi-server/pkg/jwt"
 
 	"github.com/google/wire"
@@ -13,6 +14,7 @@ import (
 
 var AuthSet = wire.NewSet(
 	ProvideJWTManager,
+	database.NewTransactionManager,
 	wire.Struct(new(dal.UserDal), "*"),
 	wire.Struct(new(service.AuthService), "*"),
 	wire.Bind(new(service.UserRepository), new(*dal.UserDal)),

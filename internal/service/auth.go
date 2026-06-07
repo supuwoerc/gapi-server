@@ -8,6 +8,7 @@ import (
 
 	"github.com/supuwoerc/gapi-server/internal/dal/model"
 	"github.com/supuwoerc/gapi-server/internal/handler/v1/resp"
+	"github.com/supuwoerc/gapi-server/pkg/database"
 	"github.com/supuwoerc/gapi-server/pkg/jwt"
 	"github.com/supuwoerc/gapi-server/pkg/logger"
 	"github.com/supuwoerc/gapi-server/pkg/response"
@@ -37,43 +38,49 @@ type UserRepository interface {
 
 type AuthService struct {
 	UserRepo    UserRepository
+	TxManager   *database.TransactionManager
 	JWTManager  *jwt.Manager
 	RedisClient *redis.Client
 	Logger      *logger.Logger
 }
 
 func (s *AuthService) Register(ctx context.Context, username, email, password string) error {
-	if _, err := s.UserRepo.FindByEmail(ctx, email); err == nil {
-		return response.UserAlreadyExists
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		s.Logger.Ctx(ctx).Error("find user by email failed", zap.Error(err))
-		return response.InternalError
-	}
-
-	if _, err := s.UserRepo.FindByUsername(ctx, username); err == nil {
-		return response.UserAlreadyExists
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		s.Logger.Ctx(ctx).Error("find user by username failed", zap.Error(err))
-		return response.InternalError
-	}
-
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		s.Logger.Ctx(ctx).Error("hash password failed", zap.Error(err))
 		return response.InternalError
 	}
 
-	user := &model.User{
-		Username:     username,
-		Email:        email,
-		PasswordHash: string(hash),
-		Status:       1,
-	}
-	if err := s.UserRepo.Create(ctx, user); err != nil {
-		s.Logger.Ctx(ctx).Error("create user failed", zap.Error(err))
-		return response.InternalError
-	}
-	return nil
+	return s.TxManager.Transaction(ctx, func(txCtx context.Context) error {
+		if _, err := s.UserRepo.FindByEmail(txCtx, email); err == nil {
+			return response.UserAlreadyExists
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+			s.Logger.Ctx(txCtx).Error("find user by email failed", zap.Error(err))
+			return response.InternalError
+		}
+
+		if _, err := s.UserRepo.FindByUsername(txCtx, username); err == nil {
+			return response.UserAlreadyExists
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+			s.Logger.Ctx(txCtx).Error("find user by username failed", zap.Error(err))
+			return response.InternalError
+		}
+
+		user := &model.User{
+			Username:     username,
+			Email:        email,
+			PasswordHash: string(hash),
+			Status:       1,
+		}
+		if err := s.UserRepo.Create(txCtx, user); err != nil {
+			if errors.Is(err, gorm.ErrDuplicatedKey) {
+				return response.UserAlreadyExists
+			}
+			s.Logger.Ctx(txCtx).Error("create user failed", zap.Error(err))
+			return response.InternalError
+		}
+		return nil
+	})
 }
 
 func (s *AuthService) Login(ctx context.Context, email, password string) (*jwt.TokenPair, *model.User, error) {

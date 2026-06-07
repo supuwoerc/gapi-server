@@ -40,7 +40,8 @@ func NewConnection(cfg *config.DatabaseConfig, l *logger.Logger) (*gorm.DB, erro
 			TablePrefix:   tablePrefix,
 			SingularTable: true,
 		},
-		Logger: gormLogger,
+		Logger:         gormLogger,
+		TranslateError: true,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to connect to database")
