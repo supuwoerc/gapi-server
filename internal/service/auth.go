@@ -105,14 +105,20 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (*jwt.T
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
-		_ = s.UserRepo.IncrementLoginFail(ctx, user.ID)
+		if err := s.UserRepo.IncrementLoginFail(ctx, user.ID); err != nil {
+			s.Logger.Ctx(ctx).Error("increment login fail count failed", zap.Uint64("userID", user.ID), zap.Error(err))
+		}
 		if user.LoginFailCount+1 >= maxLoginFailCount {
-			_ = s.UserRepo.LockUser(ctx, user.ID, time.Now().Add(lockDuration))
+			if err := s.UserRepo.LockUser(ctx, user.ID, time.Now().Add(lockDuration)); err != nil {
+				s.Logger.Ctx(ctx).Error("lock user failed", zap.Uint64("userID", user.ID), zap.Error(err))
+			}
 		}
 		return nil, nil, response.InvalidCredential
 	}
 
-	_ = s.UserRepo.UpdateLastLogin(ctx, user.ID)
+	if err := s.UserRepo.UpdateLastLogin(ctx, user.ID); err != nil {
+		s.Logger.Ctx(ctx).Error("update last login failed", zap.Uint64("userID", user.ID), zap.Error(err))
+	}
 
 	pair, err := s.JWTManager.GenerateTokenPair(user.ID, user.Username)
 	if err != nil {
@@ -154,7 +160,9 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (*j
 }
 
 func (s *AuthService) Logout(ctx context.Context, userID uint64) {
-	_ = s.TokenRepo.DeleteRefreshToken(ctx, userID)
+	if err := s.TokenRepo.DeleteRefreshToken(ctx, userID); err != nil {
+		s.Logger.Ctx(ctx).Error("delete refresh token failed", zap.Uint64("userID", userID), zap.Error(err))
+	}
 }
 
 func (s *AuthService) GetProfile(ctx context.Context, userID uint64) (*resp.LoginResponse, error) {
