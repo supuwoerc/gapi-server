@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/supuwoerc/gapi-server/internal/dal/model"
@@ -13,16 +12,14 @@ import (
 	"github.com/supuwoerc/gapi-server/pkg/logger"
 	"github.com/supuwoerc/gapi-server/pkg/response"
 
-	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 const (
-	refreshTokenPrefix = "auth:refresh:"
-	maxLoginFailCount  = 5
-	lockDuration       = 30 * time.Minute
+	maxLoginFailCount = 5
+	lockDuration      = 30 * time.Minute
 )
 
 type UserRepository interface {
@@ -36,12 +33,18 @@ type UserRepository interface {
 	LockUser(ctx context.Context, id uint64, until time.Time) error
 }
 
+type TokenRepository interface {
+	StoreRefreshToken(ctx context.Context, userID uint64, token string, expiry time.Duration) error
+	GetRefreshToken(ctx context.Context, userID uint64) (string, error)
+	DeleteRefreshToken(ctx context.Context, userID uint64) error
+}
+
 type AuthService struct {
-	UserRepo    UserRepository
-	TxManager   *database.TransactionManager
-	JWTManager  *jwt.Manager
-	RedisClient *redis.Client
-	Logger      *logger.Logger
+	UserRepo   UserRepository
+	TokenRepo  TokenRepository
+	TxManager  *database.TransactionManager
+	JWTManager *jwt.Manager
+	Logger     *logger.Logger
 }
 
 func (s *AuthService) Register(ctx context.Context, username, email, password string) error {
@@ -117,7 +120,10 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (*jwt.T
 		return nil, nil, response.InternalError
 	}
 
-	s.storeRefreshToken(ctx, user.ID, pair.RefreshToken)
+	if err := s.TokenRepo.StoreRefreshToken(ctx, user.ID, pair.RefreshToken, s.JWTManager.RefreshTokenExpiry()); err != nil {
+		s.Logger.Ctx(ctx).Error("store refresh token failed", zap.Error(err))
+		return nil, nil, response.InternalError
+	}
 
 	return pair, user, nil
 }
@@ -128,8 +134,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (*j
 		return nil, response.TokenExpired
 	}
 
-	key := s.refreshTokenKey(claims.UserID)
-	stored, err := s.RedisClient.Get(ctx, key).Result()
+	stored, err := s.TokenRepo.GetRefreshToken(ctx, claims.UserID)
 	if err != nil || stored != refreshToken {
 		return nil, response.RefreshTokenUsed
 	}
@@ -140,14 +145,16 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (*j
 		return nil, response.InternalError
 	}
 
-	s.storeRefreshToken(ctx, claims.UserID, pair.RefreshToken)
+	if err := s.TokenRepo.StoreRefreshToken(ctx, claims.UserID, pair.RefreshToken, s.JWTManager.RefreshTokenExpiry()); err != nil {
+		s.Logger.Ctx(ctx).Error("store refresh token failed", zap.Error(err))
+		return nil, response.InternalError
+	}
 
 	return pair, nil
 }
 
 func (s *AuthService) Logout(ctx context.Context, userID uint64) {
-	key := s.refreshTokenKey(userID)
-	s.RedisClient.Del(ctx, key)
+	_ = s.TokenRepo.DeleteRefreshToken(ctx, userID)
 }
 
 func (s *AuthService) GetProfile(ctx context.Context, userID uint64) (*resp.LoginResponse, error) {
@@ -172,13 +179,4 @@ func (s *AuthService) GetProfile(ctx context.Context, userID uint64) (*resp.Logi
 		RoutePermissions: []string{},
 		CompletedTours:   []string{},
 	}, nil
-}
-
-func (s *AuthService) storeRefreshToken(ctx context.Context, userID uint64, token string) {
-	key := s.refreshTokenKey(userID)
-	s.RedisClient.Set(ctx, key, token, s.JWTManager.RefreshTokenExpiry())
-}
-
-func (s *AuthService) refreshTokenKey(userID uint64) string {
-	return fmt.Sprintf("%s%d", refreshTokenPrefix, userID)
 }

@@ -16,8 +16,10 @@ var AuthSet = wire.NewSet(
 	ProvideJWTManager,
 	database.NewTransactionManager,
 	wire.Struct(new(dal.UserDal), "*"),
+	wire.Struct(new(dal.TokenDal), "*"),
 	wire.Struct(new(service.AuthService), "*"),
 	wire.Bind(new(service.UserRepository), new(*dal.UserDal)),
+	wire.Bind(new(service.TokenRepository), new(*dal.TokenDal)),
 	wire.Bind(new(v1.AuthServiceInterface), new(*service.AuthService)),
 	ProvideAuthHandler,
 )
