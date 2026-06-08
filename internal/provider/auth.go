@@ -31,9 +31,10 @@ func ProvideJWTManager(cfg *config.JWTConfig) *jwt.Manager {
 	return jwt.NewManager(cfg.Secret, cfg.Issuer, cfg.AccessTokenExpiry, cfg.RefreshTokenExpiry)
 }
 
-func ProvideAuthHandler(svc v1.AuthServiceInterface, m *jwt.Manager) *v1.AuthHandler {
+func ProvideAuthHandler(svc v1.AuthServiceInterface, captchaSvc v1.CaptchaServiceInterface, m *jwt.Manager) *v1.AuthHandler {
 	return &v1.AuthHandler{
-		Service: svc,
-		JWTAuth: middleware.JWTAuth(m),
+		Service:        svc,
+		CaptchaService: captchaSvc,
+		JWTAuth:        middleware.JWTAuth(m),
 	}
 }

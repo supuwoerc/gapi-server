@@ -2,9 +2,12 @@ package req
 
 // RegisterRequest 用户注册请求
 type RegisterRequest struct {
-	Username string `json:"username" binding:"required,min=3,max=64" example:"john_doe"`
-	Email    string `json:"email" binding:"required,email,max=128" example:"john@example.com"`
-	Password string `json:"password" binding:"required,min=8,max=128" example:"password123"`
+	Username  string `json:"username" binding:"required,min=3,max=64" example:"john_doe"`
+	Email     string `json:"email" binding:"required,email,max=128" example:"john@example.com"`
+	Password  string `json:"password" binding:"required,min=8,max=128" example:"password123"`
+	CaptchaID string `json:"captcha_id" binding:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+	CaptchaX  int    `json:"captcha_x" binding:"required" example:"150"`
+	CaptchaY  int    `json:"captcha_y"`
 }
 
 // LoginRequest 用户登录请求

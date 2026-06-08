@@ -25,4 +25,7 @@ const (
 	UserLocked        StatusCode = 20004 // userLocked
 	TokenExpired      StatusCode = 20005 // tokenExpired
 	RefreshTokenUsed  StatusCode = 20006 // refreshTokenUsed
+	CaptchaGenFailed  StatusCode = 20007 // captchaGenFailed
+	CaptchaInvalid    StatusCode = 20008 // captchaInvalid
+	CaptchaExpired    StatusCode = 20009 // captchaExpired
 )

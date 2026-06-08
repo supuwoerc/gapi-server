@@ -13,5 +13,8 @@
   {"id": "userDisabled", "other": "账户已禁用"},
   {"id": "userLocked", "other": "账户已锁定，请稍后再试"},
   {"id": "tokenExpired", "other": "Token 已过期"},
-  {"id": "refreshTokenUsed", "other": "Refresh Token 已失效"}
+  {"id": "refreshTokenUsed", "other": "Refresh Token 已失效"},
+  {"id": "captchaGenFailed", "other": "验证码生成失败，请重试"},
+  {"id": "captchaInvalid", "other": "验证码校验失败"},
+  {"id": "captchaExpired", "other": "验证码已过期，请重新获取"}
 ]

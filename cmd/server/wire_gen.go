@@ -85,8 +85,20 @@ func WireApp() (*app.App, error) {
 		JWTManager: manager,
 		Logger:     loggerLogger,
 	}
-	authHandler := provider.ProvideAuthHandler(authService, manager)
-	v2 := provider.ProvideV1Registrars(healthHandler, cronJobHandler, authHandler)
+	slideCaptcha := provider.ProvideSlideCaptcha()
+	captchaDal := &dal.CaptchaDal{
+		Redis: redisClient,
+	}
+	captchaService := &service.CaptchaService{
+		Slide:       slideCaptcha,
+		CaptchaRepo: captchaDal,
+		Logger:      loggerLogger,
+	}
+	authHandler := provider.ProvideAuthHandler(authService, captchaService, manager)
+	captchaHandler := &v1.CaptchaHandler{
+		Service: captchaService,
+	}
+	v2 := provider.ProvideV1Registrars(healthHandler, cronJobHandler, authHandler, captchaHandler)
 	v1Handlers := router.NewV1Handlers(v2)
 	engine := router.NewEngine(loggerLogger, configConfig, redisClient, v1Handlers)
 	dynConfig := etcd.NewDynConfig(client, etcdConfig, configConfig, loggerLogger)

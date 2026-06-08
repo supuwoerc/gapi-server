@@ -22,8 +22,9 @@ type AuthServiceInterface interface {
 }
 
 type AuthHandler struct {
-	Service AuthServiceInterface
-	JWTAuth gin.HandlerFunc
+	Service        AuthServiceInterface
+	CaptchaService CaptchaServiceInterface
+	JWTAuth        gin.HandlerFunc
 }
 
 // Register registers auth routes on the given router group.
@@ -56,6 +57,15 @@ func (h *AuthHandler) SignUp(c *gin.Context) {
 	var r req.RegisterRequest
 	if err := c.ShouldBindJSON(&r); err != nil {
 		response.ParamsValidateFail(c, err)
+		return
+	}
+	ok, err := h.CaptchaService.ValidateSlideCaptcha(c.Request.Context(), r.CaptchaID, r.CaptchaX, r.CaptchaY)
+	if err != nil {
+		response.FailWithCode(c, response.CaptchaExpired)
+		return
+	}
+	if !ok {
+		response.FailWithCode(c, response.CaptchaInvalid)
 		return
 	}
 	if err := h.Service.Register(c.Request.Context(), r.Username, r.Email, r.Password); err != nil {
