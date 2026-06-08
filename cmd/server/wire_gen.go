@@ -86,11 +86,15 @@ func WireApp() (*app.App, error) {
 		Logger:     loggerLogger,
 	}
 	slideCaptcha := provider.ProvideSlideCaptcha()
+	clickCaptcha := provider.ProvideClickCaptcha()
+	rotateCaptcha := provider.ProvideRotateCaptcha()
 	captchaDal := &dal.CaptchaDal{
 		Redis: redisClient,
 	}
 	captchaService := &service.CaptchaService{
 		Slide:       slideCaptcha,
+		Click:       clickCaptcha,
+		Rotate:      rotateCaptcha,
 		CaptchaRepo: captchaDal,
 		Logger:      loggerLogger,
 	}

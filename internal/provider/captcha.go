@@ -11,6 +11,8 @@ import (
 
 var CaptchaSet = wire.NewSet(
 	ProvideSlideCaptcha,
+	ProvideClickCaptcha,
+	ProvideRotateCaptcha,
 	wire.Struct(new(dal.CaptchaDal), "*"),
 	wire.Struct(new(service.CaptchaService), "*"),
 	wire.Bind(new(service.CaptchaRepository), new(*dal.CaptchaDal)),
@@ -24,4 +26,20 @@ func ProvideSlideCaptcha() *captcha.SlideCaptcha {
 		panic("failed to initialize slide captcha: " + err.Error())
 	}
 	return sc
+}
+
+func ProvideClickCaptcha() *captcha.ClickCaptcha {
+	cc, err := captcha.NewClickCaptcha()
+	if err != nil {
+		panic("failed to initialize click captcha: " + err.Error())
+	}
+	return cc
+}
+
+func ProvideRotateCaptcha() *captcha.RotateCaptcha {
+	rc, err := captcha.NewRotateCaptcha()
+	if err != nil {
+		panic("failed to initialize rotate captcha: " + err.Error())
+	}
+	return rc
 }

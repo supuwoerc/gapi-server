@@ -26,16 +26,17 @@ func _() {
 	_ = x[CaptchaGenFailed-20007]
 	_ = x[CaptchaInvalid-20008]
 	_ = x[CaptchaExpired-20009]
+	_ = x[CaptchaTokenInvalid-20010]
 }
 
 const (
 	_StatusCode_name_0 = "okerrorinvalidParamsinvalidTokencancelRequestrecoveryErrorinternalErrortimeoutErrbusy"
-	_StatusCode_name_1 = "userAlreadyExistsinvalidCredentialuserDisableduserLockedtokenExpiredrefreshTokenUsedcaptchaGenFailedcaptchaInvalidcaptchaExpired"
+	_StatusCode_name_1 = "userAlreadyExistsinvalidCredentialuserDisableduserLockedtokenExpiredrefreshTokenUsedcaptchaGenFailedcaptchaInvalidcaptchaExpiredcaptchaTokenInvalid"
 )
 
 var (
 	_StatusCode_index_0 = [...]uint8{0, 2, 7, 20, 32, 45, 58, 71, 81, 85}
-	_StatusCode_index_1 = [...]uint8{0, 17, 34, 46, 56, 68, 84, 100, 114, 128}
+	_StatusCode_index_1 = [...]uint8{0, 17, 34, 46, 56, 68, 84, 100, 114, 128, 147}
 )
 
 func (i StatusCode) String() string {
@@ -43,7 +44,7 @@ func (i StatusCode) String() string {
 	case 10000 <= i && i <= 10008:
 		i -= 10000
 		return _StatusCode_name_0[_StatusCode_index_0[i]:_StatusCode_index_0[i+1]]
-	case 20001 <= i && i <= 20009:
+	case 20001 <= i && i <= 20010:
 		i -= 20001
 		return _StatusCode_name_1[_StatusCode_index_1[i]:_StatusCode_index_1[i+1]]
 	default:

@@ -59,13 +59,8 @@ func (h *AuthHandler) SignUp(c *gin.Context) {
 		response.ParamsValidateFail(c, err)
 		return
 	}
-	ok, err := h.CaptchaService.ValidateSlideCaptcha(c.Request.Context(), r.CaptchaID, r.CaptchaX, r.CaptchaY)
-	if err != nil {
-		response.FailWithCode(c, response.CaptchaExpired)
-		return
-	}
-	if !ok {
-		response.FailWithCode(c, response.CaptchaInvalid)
+	if err := h.CaptchaService.ValidateCaptchaToken(c.Request.Context(), r.CaptchaToken); err != nil {
+		response.FailWithCode(c, response.CaptchaTokenInvalid)
 		return
 	}
 	if err := h.Service.Register(c.Request.Context(), r.Username, r.Email, r.Password); err != nil {
