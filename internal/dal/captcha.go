@@ -3,6 +3,7 @@ package dal
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -24,7 +25,7 @@ type CaptchaDal struct {
 
 // --- Slide ---
 
-func (d *CaptchaDal) StoreCaptchaAnswer(ctx context.Context, captchaID string, x, y int, expiry time.Duration) error {
+func (d *CaptchaDal) StoreSlideAnswer(ctx context.Context, captchaID string, x, y int, expiry time.Duration) error {
 	key := captchaSlidePrefix + captchaID
 	pipe := d.Redis.TxPipeline()
 	pipe.HSet(ctx, key, map[string]any{
@@ -36,7 +37,7 @@ func (d *CaptchaDal) StoreCaptchaAnswer(ctx context.Context, captchaID string, x
 	return err
 }
 
-func (d *CaptchaDal) GetCaptchaAnswer(ctx context.Context, captchaID string) (int, int, error) {
+func (d *CaptchaDal) GetSlideAnswer(ctx context.Context, captchaID string) (int, int, error) {
 	key := captchaSlidePrefix + captchaID
 	result, err := d.Redis.HGetAll(ctx, key).Result()
 	if err != nil {
@@ -50,7 +51,7 @@ func (d *CaptchaDal) GetCaptchaAnswer(ctx context.Context, captchaID string) (in
 	return x, y, nil
 }
 
-func (d *CaptchaDal) DeleteCaptchaAnswer(ctx context.Context, captchaID string) error {
+func (d *CaptchaDal) DeleteSlideAnswer(ctx context.Context, captchaID string) error {
 	return d.Redis.Del(ctx, captchaSlidePrefix+captchaID).Err()
 }
 
@@ -67,7 +68,7 @@ func (d *CaptchaDal) StoreClickAnswer(ctx context.Context, captchaID string, dot
 func (d *CaptchaDal) GetClickAnswer(ctx context.Context, captchaID string) (map[int]*click.Dot, error) {
 	data, err := d.Redis.Get(ctx, captchaClickPrefix+captchaID).Bytes()
 	if err != nil {
-		if err == redis.Nil {
+		if errors.Is(err, redis.Nil) {
 			return nil, fmt.Errorf("captcha not found: %s", captchaID)
 		}
 		return nil, err

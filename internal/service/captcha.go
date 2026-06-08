@@ -20,9 +20,9 @@ const (
 )
 
 type CaptchaRepository interface {
-	StoreCaptchaAnswer(ctx context.Context, captchaID string, x, y int, expiry time.Duration) error
-	GetCaptchaAnswer(ctx context.Context, captchaID string) (int, int, error)
-	DeleteCaptchaAnswer(ctx context.Context, captchaID string) error
+	StoreSlideAnswer(ctx context.Context, captchaID string, x, y int, expiry time.Duration) error
+	GetSlideAnswer(ctx context.Context, captchaID string) (int, int, error)
+	DeleteSlideAnswer(ctx context.Context, captchaID string) error
 	StoreClickAnswer(ctx context.Context, captchaID string, dots map[int]*click.Dot, expiry time.Duration) error
 	GetClickAnswer(ctx context.Context, captchaID string) (map[int]*click.Dot, error)
 	DeleteClickAnswer(ctx context.Context, captchaID string) error
@@ -49,7 +49,7 @@ func (s *CaptchaService) GenerateSlideCaptcha(ctx context.Context) (*resp.Captch
 	}
 
 	captchaID := uuid.New().String()
-	if err := s.CaptchaRepo.StoreCaptchaAnswer(ctx, captchaID, data.X, data.Y, captchaExpiry); err != nil {
+	if err := s.CaptchaRepo.StoreSlideAnswer(ctx, captchaID, data.X, data.Y, captchaExpiry); err != nil {
 		s.Logger.Ctx(ctx).Error("store captcha answer failed", zap.Error(err))
 		return nil, response.CaptchaGenFailed
 	}
@@ -63,13 +63,13 @@ func (s *CaptchaService) GenerateSlideCaptcha(ctx context.Context) (*resp.Captch
 }
 
 func (s *CaptchaService) ValidateSlideCaptcha(ctx context.Context, captchaID string, x, y int) (string, error) {
-	targetX, targetY, err := s.CaptchaRepo.GetCaptchaAnswer(ctx, captchaID)
+	targetX, targetY, err := s.CaptchaRepo.GetSlideAnswer(ctx, captchaID)
 	if err != nil {
 		s.Logger.Ctx(ctx).Warn("get captcha answer failed", zap.String("captchaID", captchaID), zap.Error(err))
 		return "", response.CaptchaExpired
 	}
 
-	if err := s.CaptchaRepo.DeleteCaptchaAnswer(ctx, captchaID); err != nil {
+	if err := s.CaptchaRepo.DeleteSlideAnswer(ctx, captchaID); err != nil {
 		s.Logger.Ctx(ctx).Error("delete captcha answer failed", zap.String("captchaID", captchaID), zap.Error(err))
 	}
 

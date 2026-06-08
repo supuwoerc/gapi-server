@@ -25,10 +25,10 @@ func TestCaptchaDal_StoreAndGet(t *testing.T) {
 	d := &dal.CaptchaDal{Redis: client}
 	ctx := context.Background()
 
-	err := d.StoreCaptchaAnswer(ctx, "test-id-1", 150, 80, 2*time.Minute)
+	err := d.StoreSlideAnswer(ctx, "test-id-1", 150, 80, 2*time.Minute)
 	require.NoError(t, err)
 
-	x, y, err := d.GetCaptchaAnswer(ctx, "test-id-1")
+	x, y, err := d.GetSlideAnswer(ctx, "test-id-1")
 	require.NoError(t, err)
 	assert.Equal(t, 150, x)
 	assert.Equal(t, 80, y)
@@ -39,11 +39,11 @@ func TestCaptchaDal_Delete(t *testing.T) {
 	d := &dal.CaptchaDal{Redis: client}
 	ctx := context.Background()
 
-	_ = d.StoreCaptchaAnswer(ctx, "test-id-2", 100, 50, 2*time.Minute)
-	err := d.DeleteCaptchaAnswer(ctx, "test-id-2")
+	_ = d.StoreSlideAnswer(ctx, "test-id-2", 100, 50, 2*time.Minute)
+	err := d.DeleteSlideAnswer(ctx, "test-id-2")
 	require.NoError(t, err)
 
-	_, _, err = d.GetCaptchaAnswer(ctx, "test-id-2")
+	_, _, err = d.GetSlideAnswer(ctx, "test-id-2")
 	assert.Error(t, err)
 }
 
@@ -52,7 +52,7 @@ func TestCaptchaDal_GetNotExist(t *testing.T) {
 	d := &dal.CaptchaDal{Redis: client}
 	ctx := context.Background()
 
-	_, _, err := d.GetCaptchaAnswer(ctx, "not-exist")
+	_, _, err := d.GetSlideAnswer(ctx, "not-exist")
 	assert.Error(t, err)
 }
 
