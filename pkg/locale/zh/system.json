@@ -16,5 +16,8 @@
   {"id": "refreshTokenUsed", "other": "Refresh Token 已失效"},
   {"id": "captchaGenFailed", "other": "验证码生成失败，请重试"},
   {"id": "captchaInvalid", "other": "验证码校验失败"},
-  {"id": "captchaExpired", "other": "验证码已过期，请重新获取"}
+  {"id": "captchaExpired", "other": "验证码已过期，请重新获取"},
+  {"id": "captchaTokenInvalid", "other": "验证码 Token 无效"},
+  {"id": "tourIDInvalid", "other": "无效的引导标识"},
+  {"id": "tourLimitExceeded", "other": "已完成的引导数量超出限制"}
 ]

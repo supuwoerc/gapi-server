@@ -33,6 +33,11 @@ rate_limit:
   pattern: "100-M"               # 限流模式 (100次/分钟)
   prefix: "gapi_limiter"         # Redis key 前缀
 
+tour:
+  valid_ids:                         # 合法的引导标识列表 (通过 etcd DynConfig 热更新)
+    - "welcome"
+    - "dashboard"
+
 redis:
   addr: "127.0.0.1:6379"         # Redis 地址
   password: ""                   # Redis 密码

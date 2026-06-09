@@ -68,6 +68,12 @@ type Config struct {
 type HotConfig struct {
 	Cors      CorsConfig      `mapstructure:"cors"`       // 跨域配置
 	RateLimit RateLimitConfig `mapstructure:"rate_limit"` // 限流配置
+	Tour      TourConfig      `mapstructure:"tour"`       // 引导配置
+}
+
+// TourConfig holds valid tour IDs that can be hot-reloaded.
+type TourConfig struct {
+	ValidIDs []string `mapstructure:"valid_ids"` // 合法的引导标识列表
 }
 
 // ServerConfig holds HTTP server settings.

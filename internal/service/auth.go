@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/samber/lo"
+	"github.com/supuwoerc/gapi-server/internal/config"
 	"github.com/supuwoerc/gapi-server/internal/dal/model"
 	"github.com/supuwoerc/gapi-server/pkg/database"
 	"github.com/supuwoerc/gapi-server/pkg/jwt"
@@ -20,6 +21,7 @@ import (
 const (
 	maxLoginFailCount = 5
 	lockDuration      = 30 * time.Minute
+	maxCompletedTours = 50
 )
 
 type UserRepository interface {
@@ -52,6 +54,7 @@ type AuthService struct {
 	PermRepo   PermissionRepository
 	TxManager  *database.TransactionManager
 	JWTManager *jwt.Manager
+	Config     *config.Config
 	Logger     *logger.Logger
 }
 
@@ -210,12 +213,21 @@ func (s *AuthService) GetModulePermissions(ctx context.Context, roleIDs []uint64
 }
 
 func (s *AuthService) UpdateCompletedTours(ctx context.Context, userID uint64, newTours []string) ([]string, error) {
+	validIDs := s.Config.Tour.ValidIDs
+	if lo.SomeBy(newTours, func(t string) bool {
+		return !lo.Contains(validIDs, t)
+	}) {
+		return nil, response.TourIDInvalid
+	}
 	user, err := s.UserRepo.FindByID(ctx, userID)
 	if err != nil {
 		s.Logger.Ctx(ctx).Error("find user failed", zap.Uint64("userID", userID), zap.Error(err))
 		return nil, response.InternalError
 	}
 	merged := lo.Uniq(append([]string(user.CompletedTours), newTours...))
+	if len(merged) > maxCompletedTours {
+		return nil, response.TourLimitExceeded
+	}
 	if err := s.UserRepo.UpdateCompletedTours(ctx, userID, merged); err != nil {
 		s.Logger.Ctx(ctx).Error("update completed tours failed", zap.Uint64("userID", userID), zap.Error(err))
 		return nil, response.InternalError

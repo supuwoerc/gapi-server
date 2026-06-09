@@ -29,4 +29,6 @@ const (
 	CaptchaInvalid      StatusCode = 20008 // captchaInvalid
 	CaptchaExpired      StatusCode = 20009 // captchaExpired
 	CaptchaTokenInvalid StatusCode = 20010 // captchaTokenInvalid
+	TourIDInvalid       StatusCode = 20011 // tourIDInvalid
+	TourLimitExceeded   StatusCode = 20012 // tourLimitExceeded
 )

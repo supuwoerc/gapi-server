@@ -16,5 +16,8 @@
   {"id": "refreshTokenUsed", "other": "Refresh token is invalid"},
   {"id": "captchaGenFailed", "other": "Failed to generate captcha, please try again"},
   {"id": "captchaInvalid", "other": "Captcha verification failed"},
-  {"id": "captchaExpired", "other": "Captcha expired, please request a new one"}
+  {"id": "captchaExpired", "other": "Captcha expired, please request a new one"},
+  {"id": "captchaTokenInvalid", "other": "Captcha token is invalid"},
+  {"id": "tourIDInvalid", "other": "Invalid tour ID"},
+  {"id": "tourLimitExceeded", "other": "Completed tours limit exceeded"}
 ]
