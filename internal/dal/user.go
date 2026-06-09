@@ -61,10 +61,11 @@ func (d *UserDal) UpdateLastLogin(ctx context.Context, id uint64) error {
 }
 
 func (d *UserDal) IncrementLoginFail(ctx context.Context, id uint64) error {
-	db := database.TxFromContext(ctx, d.DB)
-	return db.WithContext(ctx).Model(&model.User{}).
-		Where("id = ?", id).
-		Update("login_fail_count", gorm.Expr("login_fail_count + 1")).Error
+	q := d.getQuery(ctx).User
+	_, err := q.WithContext(ctx).Where(q.ID.Eq(id)).UpdateSimple(
+		q.LoginFailCount.SetCol(q.LoginFailCount.Add(1)),
+	)
+	return err
 }
 
 func (d *UserDal) LockUser(ctx context.Context, id uint64, until time.Time) error {
@@ -88,10 +89,7 @@ func (d *UserDal) UpdateProfile(ctx context.Context, id uint64, username, bio, a
 	_, err := q.WithContext(ctx).Where(q.ID.Eq(id)).UpdateSimple(
 		q.Username.Value(username),
 		q.Avatar.Value(avatar),
+		q.Bio.Value(bio),
 	)
-	if err != nil {
-		return err
-	}
-	db := database.TxFromContext(ctx, d.DB)
-	return db.WithContext(ctx).Model(&model.User{}).Where("id = ?", id).Update("bio", bio).Error
+	return err
 }
