@@ -87,7 +87,6 @@ func WireApp() (*app.App, error) {
 		PermRepo:   permissionDal,
 		TxManager:  transactionManager,
 		JWTManager: manager,
-		Config:     configConfig,
 		Logger:     loggerLogger,
 	}
 	slideCaptcha := provider.ProvideSlideCaptcha()
@@ -107,9 +106,14 @@ func WireApp() (*app.App, error) {
 	captchaHandler := &v1.CaptchaHandler{
 		Service: captchaService,
 	}
-	tourHandler := provider.ProvideTourHandler(authService, manager)
-	profileHandler := provider.ProvideProfileHandler(authService, manager)
-	v2 := provider.ProvideV1Registrars(healthHandler, cronJobHandler, authHandler, captchaHandler, tourHandler, profileHandler)
+	userService := &service.UserService{
+		UserRepo: userDal,
+		PermRepo: permissionDal,
+		Config:   configConfig,
+		Logger:   loggerLogger,
+	}
+	userHandler := provider.ProvideUserHandler(userService, manager)
+	v2 := provider.ProvideV1Registrars(healthHandler, cronJobHandler, authHandler, captchaHandler, userHandler)
 	v1Handlers := router.NewV1Handlers(v2)
 	engine := router.NewEngine(loggerLogger, configConfig, redisClient, v1Handlers)
 	dynConfig := etcd.NewDynConfig(client, etcdConfig, configConfig, loggerLogger)

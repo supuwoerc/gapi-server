@@ -13,6 +13,6 @@ var HandlerSet = wire.NewSet(
 	router.NewV1Handlers,
 )
 
-func ProvideV1Registrars(health *v1.HealthHandler, cronJob *v1.CronJobHandler, auth *v1.AuthHandler, captchaH *v1.CaptchaHandler, tour *v1.TourHandler, profile *v1.ProfileHandler) []router.Registrar {
-	return []router.Registrar{health, cronJob, auth, captchaH, tour, profile}
+func ProvideV1Registrars(health *v1.HealthHandler, cronJob *v1.CronJobHandler, auth *v1.AuthHandler, captchaH *v1.CaptchaHandler, user *v1.UserHandler) []router.Registrar {
+	return []router.Registrar{health, cronJob, auth, captchaH, user}
 }

@@ -19,34 +19,15 @@ type AuthServiceInterface interface {
 	Login(ctx context.Context, email, password string) (*jwt.TokenPair, *model.User, error)
 	RefreshToken(ctx context.Context, refreshToken string) (*jwt.TokenPair, error)
 	Logout(ctx context.Context, userID uint64)
-	GetProfile(ctx context.Context, userID uint64) (*model.User, error)
-	GetMenuPermissions(ctx context.Context, roleIDs []uint64) ([]string, error)
-	GetRoutePermissions(ctx context.Context, roleIDs []uint64) ([]string, error)
+	GetPermissionsForRoles(ctx context.Context, roleIDs []uint64) ([]string, []string, error)
 	GetModulePermissions(ctx context.Context, roleIDs []uint64, module string) ([]string, error)
+	GetUserWithRoles(ctx context.Context, userID uint64) (*model.User, error)
 }
 
 type AuthHandler struct {
 	Service        AuthServiceInterface
 	CaptchaService CaptchaServiceInterface
 	JWTAuth        gin.HandlerFunc
-}
-
-func (h *AuthHandler) resolveRolePermissions(ctx context.Context, userRoles []model.Role) ([]string, []string, []string, error) {
-	roleIDs := make([]uint64, 0, len(userRoles))
-	roles := make([]string, 0, len(userRoles))
-	for _, r := range userRoles {
-		roleIDs = append(roleIDs, r.ID)
-		roles = append(roles, r.Code)
-	}
-	menuPerms, err := h.Service.GetMenuPermissions(ctx, roleIDs)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	routePerms, err := h.Service.GetRoutePermissions(ctx, roleIDs)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	return roles, menuPerms, routePerms, nil
 }
 
 // Register registers auth routes on the given router group.
@@ -61,7 +42,6 @@ func (h *AuthHandler) Register(r *gin.RouterGroup) {
 	authRequired.Use(h.JWTAuth)
 	{
 		authRequired.POST("/logout", h.Logout)
-		authRequired.GET("/profile", h.Profile)
 		authRequired.GET("/permissions", h.GetPermissions)
 	}
 }
@@ -114,7 +94,13 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		response.FailWithError(c, err)
 		return
 	}
-	roles, menuPerms, routePerms, err := h.resolveRolePermissions(c.Request.Context(), user.Roles)
+	roleIDs := make([]uint64, 0, len(user.Roles))
+	roles := make([]string, 0, len(user.Roles))
+	for _, role := range user.Roles {
+		roleIDs = append(roleIDs, role.ID)
+		roles = append(roles, role.Code)
+	}
+	menuPerms, routePerms, err := h.Service.GetPermissionsForRoles(c.Request.Context(), roleIDs)
 	if err != nil {
 		response.FailWithError(c, err)
 		return
@@ -180,44 +166,6 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	response.Success(c)
 }
 
-// Profile
-// @Summary      获取当前用户信息
-// @Description  返回当前登录用户的信息
-// @Tags         认证
-// @Produce      json
-// @Security     BearerAuth
-// @Success      200  {object}  response.BasicResponse[resp.LoginResponse]
-// @Router       /api/v1/auth/profile [get]
-func (h *AuthHandler) Profile(c *gin.Context) {
-	userID, ok := middleware.CurrentUserID(c)
-	if !ok {
-		response.FailWithCode(c, response.InvalidToken)
-		return
-	}
-	user, err := h.Service.GetProfile(c.Request.Context(), userID)
-	if err != nil {
-		response.FailWithError(c, err)
-		return
-	}
-	roles, menuPerms, routePerms, err := h.resolveRolePermissions(c.Request.Context(), user.Roles)
-	if err != nil {
-		response.FailWithError(c, err)
-		return
-	}
-	response.SuccessWithData(c, resp.LoginResponse{
-		User: resp.UserInfo{
-			Name:   user.Username,
-			Email:  user.Email,
-			Avatar: user.Avatar,
-			Bio:    user.Bio,
-		},
-		Role:             roles,
-		MenuPermissions:  menuPerms,
-		RoutePermissions: routePerms,
-		CompletedTours:   lo.Ternary(user.CompletedTours == nil, []string{}, user.CompletedTours),
-	})
-}
-
 // GetPermissions
 // @Summary      获取模块权限
 // @Description  返回当前用户在指定模块下的权限码列表
@@ -238,7 +186,7 @@ func (h *AuthHandler) GetPermissions(c *gin.Context) {
 		response.FailWithCode(c, response.InvalidParams)
 		return
 	}
-	user, err := h.Service.GetProfile(c.Request.Context(), userID)
+	user, err := h.Service.GetUserWithRoles(c.Request.Context(), userID)
 	if err != nil {
 		response.FailWithError(c, err)
 		return

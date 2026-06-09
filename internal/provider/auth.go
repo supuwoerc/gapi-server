@@ -1,7 +1,6 @@
 package provider
 
 import (
-	"github.com/supuwoerc/gapi-server/internal/config"
 	"github.com/supuwoerc/gapi-server/internal/dal"
 	v1 "github.com/supuwoerc/gapi-server/internal/handler/v1"
 	"github.com/supuwoerc/gapi-server/internal/middleware"
@@ -10,6 +9,8 @@ import (
 	"github.com/supuwoerc/gapi-server/pkg/jwt"
 
 	"github.com/google/wire"
+
+	"github.com/supuwoerc/gapi-server/internal/config"
 )
 
 var AuthSet = wire.NewSet(
@@ -19,15 +20,16 @@ var AuthSet = wire.NewSet(
 	wire.Struct(new(dal.TokenDal), "*"),
 	wire.Struct(new(dal.PermissionDal), "*"),
 	wire.Struct(new(service.AuthService), "*"),
-	wire.Bind(new(service.UserRepository), new(*dal.UserDal)),
+	wire.Struct(new(service.UserService), "*"),
+	wire.Bind(new(service.AuthUserRepository), new(*dal.UserDal)),
 	wire.Bind(new(service.TokenRepository), new(*dal.TokenDal)),
-	wire.Bind(new(service.PermissionRepository), new(*dal.PermissionDal)),
+	wire.Bind(new(service.AuthPermissionRepository), new(*dal.PermissionDal)),
+	wire.Bind(new(service.UserRepository), new(*dal.UserDal)),
+	wire.Bind(new(service.UserPermissionRepository), new(*dal.PermissionDal)),
 	wire.Bind(new(v1.AuthServiceInterface), new(*service.AuthService)),
-	wire.Bind(new(v1.TourServiceInterface), new(*service.AuthService)),
-	wire.Bind(new(v1.ProfileServiceInterface), new(*service.AuthService)),
+	wire.Bind(new(v1.UserServiceInterface), new(*service.UserService)),
 	ProvideAuthHandler,
-	ProvideTourHandler,
-	ProvideProfileHandler,
+	ProvideUserHandler,
 )
 
 func ProvideJWTManager(cfg *config.JWTConfig) *jwt.Manager {
@@ -45,15 +47,8 @@ func ProvideAuthHandler(svc v1.AuthServiceInterface, captchaSvc v1.CaptchaServic
 	}
 }
 
-func ProvideTourHandler(svc v1.TourServiceInterface, m *jwt.Manager) *v1.TourHandler {
-	return &v1.TourHandler{
-		Service: svc,
-		JWTAuth: middleware.JWTAuth(m),
-	}
-}
-
-func ProvideProfileHandler(svc v1.ProfileServiceInterface, m *jwt.Manager) *v1.ProfileHandler {
-	return &v1.ProfileHandler{
+func ProvideUserHandler(svc v1.UserServiceInterface, m *jwt.Manager) *v1.UserHandler {
+	return &v1.UserHandler{
 		Service: svc,
 		JWTAuth: middleware.JWTAuth(m),
 	}

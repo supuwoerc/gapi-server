@@ -5,8 +5,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/samber/lo"
-	"github.com/supuwoerc/gapi-server/internal/config"
 	"github.com/supuwoerc/gapi-server/internal/dal/model"
 	"github.com/supuwoerc/gapi-server/pkg/database"
 	"github.com/supuwoerc/gapi-server/pkg/jwt"
@@ -21,10 +19,9 @@ import (
 const (
 	maxLoginFailCount = 5
 	lockDuration      = 30 * time.Minute
-	maxCompletedTours = 50
 )
 
-type UserRepository interface {
+type AuthUserRepository interface {
 	Create(ctx context.Context, user *model.User) error
 	FindByEmail(ctx context.Context, email string) (*model.User, error)
 	FindByEmailWithRoles(ctx context.Context, email string) (*model.User, error)
@@ -34,8 +31,6 @@ type UserRepository interface {
 	UpdateLastLogin(ctx context.Context, id uint64) error
 	IncrementLoginFail(ctx context.Context, id uint64) error
 	LockUser(ctx context.Context, id uint64, until time.Time) error
-	UpdateCompletedTours(ctx context.Context, id uint64, tours []string) error
-	UpdateProfile(ctx context.Context, id uint64, username, bio, avatar string) error
 }
 
 type TokenRepository interface {
@@ -44,18 +39,17 @@ type TokenRepository interface {
 	DeleteRefreshToken(ctx context.Context, userID uint64) error
 }
 
-type PermissionRepository interface {
+type AuthPermissionRepository interface {
 	FindCodesByRoleIDsAndResourceType(ctx context.Context, roleIDs []uint64, resourceType model.ResourceType) ([]string, error)
 	FindCodesByRoleIDsAndModule(ctx context.Context, roleIDs []uint64, module string) ([]string, error)
 }
 
 type AuthService struct {
-	UserRepo   UserRepository
+	UserRepo   AuthUserRepository
 	TokenRepo  TokenRepository
-	PermRepo   PermissionRepository
+	PermRepo   AuthPermissionRepository
 	TxManager  *database.TransactionManager
 	JWTManager *jwt.Manager
-	Config     *config.Config
 	Logger     *logger.Logger
 }
 
@@ -177,31 +171,18 @@ func (s *AuthService) Logout(ctx context.Context, userID uint64) {
 	}
 }
 
-func (s *AuthService) GetProfile(ctx context.Context, userID uint64) (*model.User, error) {
-	user, err := s.UserRepo.FindByIDWithRoles(ctx, userID)
-	if err != nil {
-		s.Logger.Ctx(ctx).Error("find user with roles failed", zap.Error(err))
-		return nil, response.InternalError
-	}
-	return user, nil
-}
-
-func (s *AuthService) GetMenuPermissions(ctx context.Context, roleIDs []uint64) ([]string, error) {
-	perms, err := s.PermRepo.FindCodesByRoleIDsAndResourceType(ctx, roleIDs, model.ResourceTypeFrontendMenu)
+func (s *AuthService) GetPermissionsForRoles(ctx context.Context, roleIDs []uint64) ([]string, []string, error) {
+	menuPerms, err := s.PermRepo.FindCodesByRoleIDsAndResourceType(ctx, roleIDs, model.ResourceTypeFrontendMenu)
 	if err != nil {
 		s.Logger.Ctx(ctx).Error("find menu permissions failed", zap.Error(err))
-		return nil, response.InternalError
+		return nil, nil, response.InternalError
 	}
-	return perms, nil
-}
-
-func (s *AuthService) GetRoutePermissions(ctx context.Context, roleIDs []uint64) ([]string, error) {
-	perms, err := s.PermRepo.FindCodesByRoleIDsAndResourceType(ctx, roleIDs, model.ResourceTypeFrontendRoute)
+	routePerms, err := s.PermRepo.FindCodesByRoleIDsAndResourceType(ctx, roleIDs, model.ResourceTypeFrontendRoute)
 	if err != nil {
 		s.Logger.Ctx(ctx).Error("find route permissions failed", zap.Error(err))
-		return nil, response.InternalError
+		return nil, nil, response.InternalError
 	}
-	return perms, nil
+	return menuPerms, routePerms, nil
 }
 
 func (s *AuthService) GetModulePermissions(ctx context.Context, roleIDs []uint64, module string) ([]string, error) {
@@ -213,38 +194,11 @@ func (s *AuthService) GetModulePermissions(ctx context.Context, roleIDs []uint64
 	return perms, nil
 }
 
-func (s *AuthService) UpdateProfile(ctx context.Context, userID uint64, name, bio, avatar string) (*model.User, error) {
-	if err := s.UserRepo.UpdateProfile(ctx, userID, name, bio, avatar); err != nil {
-		s.Logger.Ctx(ctx).Error("update profile failed", zap.Uint64("userID", userID), zap.Error(err))
-		return nil, response.InternalError
-	}
-	user, err := s.UserRepo.FindByID(ctx, userID)
+func (s *AuthService) GetUserWithRoles(ctx context.Context, userID uint64) (*model.User, error) {
+	user, err := s.UserRepo.FindByIDWithRoles(ctx, userID)
 	if err != nil {
-		s.Logger.Ctx(ctx).Error("find user after profile update failed", zap.Uint64("userID", userID), zap.Error(err))
+		s.Logger.Ctx(ctx).Error("find user with roles failed", zap.Error(err))
 		return nil, response.InternalError
 	}
 	return user, nil
-}
-
-func (s *AuthService) UpdateCompletedTours(ctx context.Context, userID uint64, newTours []string) ([]string, error) {
-	validIDs := s.Config.Tour.ValidIDs
-	if lo.SomeBy(newTours, func(t string) bool {
-		return !lo.Contains(validIDs, t)
-	}) {
-		return nil, response.TourIDInvalid
-	}
-	user, err := s.UserRepo.FindByID(ctx, userID)
-	if err != nil {
-		s.Logger.Ctx(ctx).Error("find user failed", zap.Uint64("userID", userID), zap.Error(err))
-		return nil, response.InternalError
-	}
-	merged := lo.Uniq(append([]string(user.CompletedTours), newTours...))
-	if len(merged) > maxCompletedTours {
-		return nil, response.TourLimitExceeded
-	}
-	if err := s.UserRepo.UpdateCompletedTours(ctx, userID, merged); err != nil {
-		s.Logger.Ctx(ctx).Error("update completed tours failed", zap.Uint64("userID", userID), zap.Error(err))
-		return nil, response.InternalError
-	}
-	return merged, nil
 }
