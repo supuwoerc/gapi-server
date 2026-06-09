@@ -106,7 +106,8 @@ func WireApp() (*app.App, error) {
 	captchaHandler := &v1.CaptchaHandler{
 		Service: captchaService,
 	}
-	v2 := provider.ProvideV1Registrars(healthHandler, cronJobHandler, authHandler, captchaHandler)
+	tourHandler := provider.ProvideTourHandler(authService, manager)
+	v2 := provider.ProvideV1Registrars(healthHandler, cronJobHandler, authHandler, captchaHandler, tourHandler)
 	v1Handlers := router.NewV1Handlers(v2)
 	engine := router.NewEngine(loggerLogger, configConfig, redisClient, v1Handlers)
 	dynConfig := etcd.NewDynConfig(client, etcdConfig, configConfig, loggerLogger)

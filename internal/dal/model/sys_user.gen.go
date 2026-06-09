@@ -7,6 +7,7 @@ package model
 import (
 	"time"
 
+	"gorm.io/datatypes"
 	"gorm.io/plugin/soft_delete"
 )
 
@@ -14,21 +15,22 @@ const TableNameUser = "sys_user"
 
 // User 用户表
 type User struct {
-	ID             uint64                `gorm:"column:id;type:bigint unsigned;primaryKey;autoIncrement:true" json:"id"`
-	Username       string                `gorm:"column:username;type:varchar(64);not null;uniqueIndex:idx_username,priority:1;comment:登录名" json:"username"` // 登录名
-	PasswordHash   string                `gorm:"column:password_hash;type:varchar(256);not null;comment:密码哈希" json:"-"`                                     // 密码哈希
-	Email          string                `gorm:"column:email;type:varchar(128);not null;comment:邮箱" json:"email"`                                           // 邮箱
-	Phone          string                `gorm:"column:phone;type:varchar(32);not null;comment:手机号" json:"phone"`                                           // 手机号
-	Avatar         string                `gorm:"column:avatar;type:varchar(512);not null;comment:头像URL" json:"avatar"`                                      // 头像URL
-	Bio            string                `gorm:"column:bio;type:varchar(256);not null;comment:个人简介" json:"bio"`                                             // 个人简介
-	Status         int32                 `gorm:"column:status;type:tinyint;not null;default:1;comment:状态 1=启用 0=禁用" json:"status"`                          // 状态 1=启用 0=禁用
-	LastLoginAt    *time.Time            `gorm:"column:last_login_at;type:datetime;comment:最近登录时间" json:"last_login_at"`                                    // 最近登录时间
-	LoginFailCount int32                 `gorm:"column:login_fail_count;type:int;not null;comment:连续登录失败次数" json:"login_fail_count"`                        // 连续登录失败次数
-	LockedUntil    *time.Time            `gorm:"column:locked_until;type:datetime;comment:锁定截止时间" json:"locked_until"`                                      // 锁定截止时间
-	CreatedAt      time.Time             `gorm:"column:created_at;type:datetime;not null" json:"created_at"`
-	UpdatedAt      time.Time             `gorm:"column:updated_at;type:datetime;not null" json:"updated_at"`
-	DeletedAt      soft_delete.DeletedAt `gorm:"column:deleted_at;type:bigint unsigned;not null;index;softDelete:milli" json:"deleted_at,omitempty"`
-	Roles          []Role                `gorm:"many2many:sys_user_role" json:"roles"`
+	ID             uint64                      `gorm:"column:id;type:bigint unsigned;primaryKey;autoIncrement:true" json:"id"`
+	Username       string                      `gorm:"column:username;type:varchar(64);not null;uniqueIndex:idx_username,priority:1;comment:登录名" json:"username"` // 登录名
+	PasswordHash   string                      `gorm:"column:password_hash;type:varchar(256);not null;comment:密码哈希" json:"-"`                                     // 密码哈希
+	Email          string                      `gorm:"column:email;type:varchar(128);not null;comment:邮箱" json:"email"`                                           // 邮箱
+	Phone          string                      `gorm:"column:phone;type:varchar(32);not null;comment:手机号" json:"phone"`                                           // 手机号
+	Avatar         string                      `gorm:"column:avatar;type:varchar(512);not null;comment:头像URL" json:"avatar"`                                      // 头像URL
+	Bio            string                      `gorm:"column:bio;type:varchar(256);not null;comment:个人简介" json:"bio"`                                             // 个人简介
+	Status         int32                       `gorm:"column:status;type:tinyint;not null;default:1;comment:状态 1=启用 0=禁用" json:"status"`                          // 状态 1=启用 0=禁用
+	LastLoginAt    *time.Time                  `gorm:"column:last_login_at;type:datetime;comment:最近登录时间" json:"last_login_at"`                                    // 最近登录时间
+	LoginFailCount int32                       `gorm:"column:login_fail_count;type:int;not null;comment:连续登录失败次数" json:"login_fail_count"`                        // 连续登录失败次数
+	LockedUntil    *time.Time                  `gorm:"column:locked_until;type:datetime;comment:锁定截止时间" json:"locked_until"`                                      // 锁定截止时间
+	CompletedTours datatypes.JSONSlice[string] `gorm:"column:completed_tours;type:json;comment:已完成的引导" json:"completed_tours"`                                    // 已完成的引导
+	CreatedAt      time.Time                   `gorm:"column:created_at;type:datetime;not null" json:"created_at"`
+	UpdatedAt      time.Time                   `gorm:"column:updated_at;type:datetime;not null" json:"updated_at"`
+	DeletedAt      soft_delete.DeletedAt       `gorm:"column:deleted_at;type:bigint unsigned;not null;index;softDelete:milli" json:"deleted_at,omitempty"`
+	Roles          []Role                      `gorm:"many2many:sys_user_role" json:"roles"`
 }
 
 // TableName User's table name

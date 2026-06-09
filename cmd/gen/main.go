@@ -58,6 +58,7 @@ func main() {
 		g.GenerateModelAs("sys_cron_job_execution", "CronJobExecution"),
 		g.GenerateModelAs("sys_user", "User",
 			gen.FieldJSONTag("password_hash", "-"),
+			gen.FieldType("completed_tours", "datatypes.JSONSlice[string]"),
 			gen.FieldRelate(field.Many2Many, "Roles", roleModel, &field.RelateConfig{
 				GORMTag: field.GormTag{"many2many": {"sys_user_role"}},
 			}),

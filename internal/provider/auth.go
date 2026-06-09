@@ -23,7 +23,9 @@ var AuthSet = wire.NewSet(
 	wire.Bind(new(service.TokenRepository), new(*dal.TokenDal)),
 	wire.Bind(new(service.PermissionRepository), new(*dal.PermissionDal)),
 	wire.Bind(new(v1.AuthServiceInterface), new(*service.AuthService)),
+	wire.Bind(new(v1.TourServiceInterface), new(*service.AuthService)),
 	ProvideAuthHandler,
+	ProvideTourHandler,
 )
 
 func ProvideJWTManager(cfg *config.JWTConfig) *jwt.Manager {
@@ -38,5 +40,12 @@ func ProvideAuthHandler(svc v1.AuthServiceInterface, captchaSvc v1.CaptchaServic
 		Service:        svc,
 		CaptchaService: captchaSvc,
 		JWTAuth:        middleware.JWTAuth(m),
+	}
+}
+
+func ProvideTourHandler(svc v1.TourServiceInterface, m *jwt.Manager) *v1.TourHandler {
+	return &v1.TourHandler{
+		Service: svc,
+		JWTAuth: middleware.JWTAuth(m),
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/supuwoerc/gapi-server/internal/dal/model"
 	"github.com/supuwoerc/gapi-server/pkg/database"
 	"github.com/supuwoerc/gapi-server/pkg/jwt"
@@ -31,6 +32,7 @@ type UserRepository interface {
 	UpdateLastLogin(ctx context.Context, id uint64) error
 	IncrementLoginFail(ctx context.Context, id uint64) error
 	LockUser(ctx context.Context, id uint64, until time.Time) error
+	UpdateCompletedTours(ctx context.Context, id uint64, tours []string) error
 }
 
 type TokenRepository interface {
@@ -205,4 +207,18 @@ func (s *AuthService) GetModulePermissions(ctx context.Context, roleIDs []uint64
 		return nil, response.InternalError
 	}
 	return perms, nil
+}
+
+func (s *AuthService) UpdateCompletedTours(ctx context.Context, userID uint64, newTours []string) ([]string, error) {
+	user, err := s.UserRepo.FindByID(ctx, userID)
+	if err != nil {
+		s.Logger.Ctx(ctx).Error("find user failed", zap.Uint64("userID", userID), zap.Error(err))
+		return nil, response.InternalError
+	}
+	merged := lo.Uniq(append([]string(user.CompletedTours), newTours...))
+	if err := s.UserRepo.UpdateCompletedTours(ctx, userID, merged); err != nil {
+		s.Logger.Ctx(ctx).Error("update completed tours failed", zap.Uint64("userID", userID), zap.Error(err))
+		return nil, response.InternalError
+	}
+	return merged, nil
 }

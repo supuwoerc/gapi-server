@@ -3,6 +3,7 @@ package v1
 import (
 	"context"
 
+	"github.com/samber/lo"
 	"github.com/supuwoerc/gapi-server/internal/dal/model"
 	"github.com/supuwoerc/gapi-server/internal/handler/v1/req"
 	"github.com/supuwoerc/gapi-server/internal/handler/v1/resp"
@@ -130,7 +131,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		Role:             roles,
 		MenuPermissions:  menuPerms,
 		RoutePermissions: routePerms,
-		CompletedTours:   []string{},
+		CompletedTours:   lo.Ternary(user.CompletedTours == nil, []string{}, user.CompletedTours),
 	})
 }
 
@@ -213,7 +214,7 @@ func (h *AuthHandler) Profile(c *gin.Context) {
 		Role:             roles,
 		MenuPermissions:  menuPerms,
 		RoutePermissions: routePerms,
-		CompletedTours:   []string{},
+		CompletedTours:   lo.Ternary(user.CompletedTours == nil, []string{}, user.CompletedTours),
 	})
 }
 

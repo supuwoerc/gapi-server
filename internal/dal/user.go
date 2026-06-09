@@ -8,6 +8,7 @@ import (
 	"github.com/supuwoerc/gapi-server/internal/dal/query"
 	"github.com/supuwoerc/gapi-server/pkg/database"
 
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
@@ -70,6 +71,14 @@ func (d *UserDal) LockUser(ctx context.Context, id uint64, until time.Time) erro
 	q := d.getQuery(ctx).User
 	_, err := q.WithContext(ctx).Where(q.ID.Eq(id)).UpdateSimple(
 		q.LockedUntil.Value(until),
+	)
+	return err
+}
+
+func (d *UserDal) UpdateCompletedTours(ctx context.Context, id uint64, tours []string) error {
+	q := d.getQuery(ctx).User
+	_, err := q.WithContext(ctx).Where(q.ID.Eq(id)).UpdateSimple(
+		q.CompletedTours.Value(datatypes.JSONSlice[string](tours)),
 	)
 	return err
 }

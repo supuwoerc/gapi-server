@@ -38,6 +38,7 @@ func newUser(db *gorm.DB, opts ...gen.DOOption) user {
 	_user.LastLoginAt = field.NewTime(tableName, "last_login_at")
 	_user.LoginFailCount = field.NewInt32(tableName, "login_fail_count")
 	_user.LockedUntil = field.NewTime(tableName, "locked_until")
+	_user.CompletedTours = field.NewField(tableName, "completed_tours")
 	_user.CreatedAt = field.NewTime(tableName, "created_at")
 	_user.UpdatedAt = field.NewTime(tableName, "updated_at")
 	_user.DeletedAt = field.NewField(tableName, "deleted_at")
@@ -67,6 +68,7 @@ type user struct {
 	LastLoginAt    field.Time   // 最近登录时间
 	LoginFailCount field.Int32  // 连续登录失败次数
 	LockedUntil    field.Time   // 锁定截止时间
+	CompletedTours field.Field  // 已完成的引导
 	CreatedAt      field.Time
 	UpdatedAt      field.Time
 	DeletedAt      field.Field
@@ -97,6 +99,7 @@ func (u *user) updateTableName(table string) *user {
 	u.LastLoginAt = field.NewTime(table, "last_login_at")
 	u.LoginFailCount = field.NewInt32(table, "login_fail_count")
 	u.LockedUntil = field.NewTime(table, "locked_until")
+	u.CompletedTours = field.NewField(table, "completed_tours")
 	u.CreatedAt = field.NewTime(table, "created_at")
 	u.UpdatedAt = field.NewTime(table, "updated_at")
 	u.DeletedAt = field.NewField(table, "deleted_at")
@@ -124,7 +127,7 @@ func (u *user) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (u *user) fillFieldMap() {
-	u.fieldMap = make(map[string]field.Expr, 14)
+	u.fieldMap = make(map[string]field.Expr, 15)
 	u.fieldMap["id"] = u.ID
 	u.fieldMap["username"] = u.Username
 	u.fieldMap["password_hash"] = u.PasswordHash
@@ -135,6 +138,7 @@ func (u *user) fillFieldMap() {
 	u.fieldMap["last_login_at"] = u.LastLoginAt
 	u.fieldMap["login_fail_count"] = u.LoginFailCount
 	u.fieldMap["locked_until"] = u.LockedUntil
+	u.fieldMap["completed_tours"] = u.CompletedTours
 	u.fieldMap["created_at"] = u.CreatedAt
 	u.fieldMap["updated_at"] = u.UpdatedAt
 	u.fieldMap["deleted_at"] = u.DeletedAt
