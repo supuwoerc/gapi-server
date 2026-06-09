@@ -29,6 +29,11 @@ func (d *UserDal) FindByEmail(ctx context.Context, email string) (*model.User, e
 	return q.WithContext(ctx).Where(q.Email.Eq(email)).First()
 }
 
+func (d *UserDal) FindByEmailWithRoles(ctx context.Context, email string) (*model.User, error) {
+	q := d.getQuery(ctx).User
+	return q.WithContext(ctx).Preload(q.Roles).Where(q.Email.Eq(email)).First()
+}
+
 func (d *UserDal) FindByUsername(ctx context.Context, username string) (*model.User, error) {
 	q := d.getQuery(ctx).User
 	return q.WithContext(ctx).Where(q.Username.Eq(username)).First()

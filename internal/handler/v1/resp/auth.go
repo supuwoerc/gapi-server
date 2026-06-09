@@ -24,3 +24,8 @@ type RefreshTokenResponse struct {
 	Token        string `json:"token"`
 	RefreshToken string `json:"refresh_token"`
 }
+
+// PermissionsResponse 模块权限响应
+type PermissionsResponse struct {
+	Permissions []string `json:"permissions"`
+}

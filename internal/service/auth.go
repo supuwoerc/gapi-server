@@ -24,6 +24,7 @@ const (
 type UserRepository interface {
 	Create(ctx context.Context, user *model.User) error
 	FindByEmail(ctx context.Context, email string) (*model.User, error)
+	FindByEmailWithRoles(ctx context.Context, email string) (*model.User, error)
 	FindByUsername(ctx context.Context, username string) (*model.User, error)
 	FindByID(ctx context.Context, id uint64) (*model.User, error)
 	FindByIDWithRoles(ctx context.Context, id uint64) (*model.User, error)
@@ -38,9 +39,15 @@ type TokenRepository interface {
 	DeleteRefreshToken(ctx context.Context, userID uint64) error
 }
 
+type PermissionRepository interface {
+	FindCodesByRoleIDsAndResourceType(ctx context.Context, roleIDs []uint64, resourceType model.ResourceType) ([]string, error)
+	FindCodesByRoleIDsAndModule(ctx context.Context, roleIDs []uint64, module string) ([]string, error)
+}
+
 type AuthService struct {
 	UserRepo   UserRepository
 	TokenRepo  TokenRepository
+	PermRepo   PermissionRepository
 	TxManager  *database.TransactionManager
 	JWTManager *jwt.Manager
 	Logger     *logger.Logger
@@ -86,7 +93,7 @@ func (s *AuthService) Register(ctx context.Context, username, email, password st
 }
 
 func (s *AuthService) Login(ctx context.Context, email, password string) (*jwt.TokenPair, *model.User, error) {
-	user, err := s.UserRepo.FindByEmail(ctx, email)
+	user, err := s.UserRepo.FindByEmailWithRoles(ctx, email)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil, response.InvalidCredential
@@ -171,4 +178,31 @@ func (s *AuthService) GetProfile(ctx context.Context, userID uint64) (*model.Use
 		return nil, response.InternalError
 	}
 	return user, nil
+}
+
+func (s *AuthService) GetMenuPermissions(ctx context.Context, roleIDs []uint64) ([]string, error) {
+	perms, err := s.PermRepo.FindCodesByRoleIDsAndResourceType(ctx, roleIDs, model.ResourceTypeFrontendMenu)
+	if err != nil {
+		s.Logger.Ctx(ctx).Error("find menu permissions failed", zap.Error(err))
+		return nil, response.InternalError
+	}
+	return perms, nil
+}
+
+func (s *AuthService) GetRoutePermissions(ctx context.Context, roleIDs []uint64) ([]string, error) {
+	perms, err := s.PermRepo.FindCodesByRoleIDsAndResourceType(ctx, roleIDs, model.ResourceTypeFrontendRoute)
+	if err != nil {
+		s.Logger.Ctx(ctx).Error("find route permissions failed", zap.Error(err))
+		return nil, response.InternalError
+	}
+	return perms, nil
+}
+
+func (s *AuthService) GetModulePermissions(ctx context.Context, roleIDs []uint64, module string) ([]string, error) {
+	perms, err := s.PermRepo.FindCodesByRoleIDsAndModule(ctx, roleIDs, module)
+	if err != nil {
+		s.Logger.Ctx(ctx).Error("find module permissions failed", zap.String("module", module), zap.Error(err))
+		return nil, response.InternalError
+	}
+	return perms, nil
 }

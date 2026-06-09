@@ -41,7 +41,8 @@ CREATE TABLE sys_permission (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(128) NOT NULL COMMENT '权限标识 eg:user:create',
     name VARCHAR(128) NOT NULL COMMENT '权限显示名称',
-    resource_type VARCHAR(32) NOT NULL COMMENT '资源类型 api/data/frontend',
+    resource_type TINYINT NOT NULL COMMENT '资源类型 1=api 2=frontend-menu 3=frontend-route 4=frontend-button 5=data',
+    module VARCHAR(64) NOT NULL DEFAULT '' COMMENT '所属模块',
     resource_path VARCHAR(256) NOT NULL DEFAULT '' COMMENT '资源路径',
     action VARCHAR(32) NOT NULL DEFAULT '' COMMENT '操作 create/read/update/delete',
     description VARCHAR(256) NOT NULL DEFAULT '' COMMENT '权限描述',
@@ -49,7 +50,7 @@ CREATE TABLE sys_permission (
     updated_at DATETIME NOT NULL,
     deleted_at BIGINT UNSIGNED NOT NULL DEFAULT 0,
     UNIQUE INDEX idx_code (code),
-    INDEX idx_resource_type (resource_type),
+    INDEX idx_module_resource_type (module, resource_type),
     INDEX idx_deleted_at (deleted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='权限表';
 

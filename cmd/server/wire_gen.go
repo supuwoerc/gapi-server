@@ -75,12 +75,16 @@ func WireApp() (*app.App, error) {
 	tokenDal := &dal.TokenDal{
 		Redis: redisClient,
 	}
+	permissionDal := &dal.PermissionDal{
+		DB: db,
+	}
 	transactionManager := database.NewTransactionManager(db)
 	jwtConfig := provider.ProvideJWTConfig(configConfig)
 	manager := provider.ProvideJWTManager(jwtConfig)
 	authService := &service.AuthService{
 		UserRepo:   userDal,
 		TokenRepo:  tokenDal,
+		PermRepo:   permissionDal,
 		TxManager:  transactionManager,
 		JWTManager: manager,
 		Logger:     loggerLogger,

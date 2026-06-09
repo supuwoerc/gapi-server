@@ -19,12 +19,33 @@ type AuthServiceInterface interface {
 	RefreshToken(ctx context.Context, refreshToken string) (*jwt.TokenPair, error)
 	Logout(ctx context.Context, userID uint64)
 	GetProfile(ctx context.Context, userID uint64) (*model.User, error)
+	GetMenuPermissions(ctx context.Context, roleIDs []uint64) ([]string, error)
+	GetRoutePermissions(ctx context.Context, roleIDs []uint64) ([]string, error)
+	GetModulePermissions(ctx context.Context, roleIDs []uint64, module string) ([]string, error)
 }
 
 type AuthHandler struct {
 	Service        AuthServiceInterface
 	CaptchaService CaptchaServiceInterface
 	JWTAuth        gin.HandlerFunc
+}
+
+func (h *AuthHandler) resolveRolePermissions(ctx context.Context, userRoles []model.Role) ([]string, []string, []string, error) {
+	roleIDs := make([]uint64, 0, len(userRoles))
+	roles := make([]string, 0, len(userRoles))
+	for _, r := range userRoles {
+		roleIDs = append(roleIDs, r.ID)
+		roles = append(roles, r.Code)
+	}
+	menuPerms, err := h.Service.GetMenuPermissions(ctx, roleIDs)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	routePerms, err := h.Service.GetRoutePermissions(ctx, roleIDs)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return roles, menuPerms, routePerms, nil
 }
 
 // Register registers auth routes on the given router group.
@@ -40,6 +61,7 @@ func (h *AuthHandler) Register(r *gin.RouterGroup) {
 	{
 		authRequired.POST("/logout", h.Logout)
 		authRequired.GET("/profile", h.Profile)
+		authRequired.GET("/permissions", h.GetPermissions)
 	}
 }
 
@@ -91,6 +113,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		response.FailWithError(c, err)
 		return
 	}
+	roles, menuPerms, routePerms, err := h.resolveRolePermissions(c.Request.Context(), user.Roles)
+	if err != nil {
+		response.FailWithError(c, err)
+		return
+	}
 	response.SuccessWithData(c, resp.LoginResponse{
 		User: resp.UserInfo{
 			Name:   user.Username,
@@ -100,9 +127,9 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		},
 		Token:            pair.AccessToken,
 		RefreshToken:     pair.RefreshToken,
-		Role:             []string{},
-		MenuPermissions:  []string{},
-		RoutePermissions: []string{},
+		Role:             roles,
+		MenuPermissions:  menuPerms,
+		RoutePermissions: routePerms,
 		CompletedTours:   []string{},
 	})
 }
@@ -171,9 +198,10 @@ func (h *AuthHandler) Profile(c *gin.Context) {
 		response.FailWithError(c, err)
 		return
 	}
-	roles := make([]string, 0, len(user.Roles))
-	for _, r := range user.Roles {
-		roles = append(roles, r.Code)
+	roles, menuPerms, routePerms, err := h.resolveRolePermissions(c.Request.Context(), user.Roles)
+	if err != nil {
+		response.FailWithError(c, err)
+		return
 	}
 	response.SuccessWithData(c, resp.LoginResponse{
 		User: resp.UserInfo{
@@ -183,8 +211,47 @@ func (h *AuthHandler) Profile(c *gin.Context) {
 			Bio:    user.Bio,
 		},
 		Role:             roles,
-		MenuPermissions:  []string{},
-		RoutePermissions: []string{},
+		MenuPermissions:  menuPerms,
+		RoutePermissions: routePerms,
 		CompletedTours:   []string{},
+	})
+}
+
+// GetPermissions
+// @Summary      获取模块权限
+// @Description  返回当前用户在指定模块下的权限码列表
+// @Tags         认证
+// @Produce      json
+// @Security     BearerAuth
+// @Param        module  query  string  true  "模块名称"
+// @Success      200  {object}  response.BasicResponse[resp.PermissionsResponse]
+// @Router       /api/v1/auth/permissions [get]
+func (h *AuthHandler) GetPermissions(c *gin.Context) {
+	userID, ok := middleware.CurrentUserID(c)
+	if !ok {
+		response.FailWithCode(c, response.InvalidToken)
+		return
+	}
+	module := c.Query("module")
+	if module == "" {
+		response.FailWithCode(c, response.InvalidParams)
+		return
+	}
+	user, err := h.Service.GetProfile(c.Request.Context(), userID)
+	if err != nil {
+		response.FailWithError(c, err)
+		return
+	}
+	roleIDs := make([]uint64, 0, len(user.Roles))
+	for _, r := range user.Roles {
+		roleIDs = append(roleIDs, r.ID)
+	}
+	perms, err := h.Service.GetModulePermissions(c.Request.Context(), roleIDs, module)
+	if err != nil {
+		response.FailWithError(c, err)
+		return
+	}
+	response.SuccessWithData(c, resp.PermissionsResponse{
+		Permissions: perms,
 	})
 }
