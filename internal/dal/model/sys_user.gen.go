@@ -20,6 +20,7 @@ type User struct {
 	Email          string                `gorm:"column:email;type:varchar(128);not null;comment:邮箱" json:"email"`                                           // 邮箱
 	Phone          string                `gorm:"column:phone;type:varchar(32);not null;comment:手机号" json:"phone"`                                           // 手机号
 	Avatar         string                `gorm:"column:avatar;type:varchar(512);not null;comment:头像URL" json:"avatar"`                                      // 头像URL
+	Bio            string                `gorm:"column:bio;type:varchar(256);not null;comment:个人简介" json:"bio"`                                             // 个人简介
 	Status         int32                 `gorm:"column:status;type:tinyint;not null;default:1;comment:状态 1=启用 0=禁用" json:"status"`                          // 状态 1=启用 0=禁用
 	LastLoginAt    *time.Time            `gorm:"column:last_login_at;type:datetime;comment:最近登录时间" json:"last_login_at"`                                    // 最近登录时间
 	LoginFailCount int32                 `gorm:"column:login_fail_count;type:int;not null;comment:连续登录失败次数" json:"login_fail_count"`                        // 连续登录失败次数

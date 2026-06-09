@@ -6,6 +6,7 @@ CREATE TABLE sys_user (
     email VARCHAR(128) NOT NULL DEFAULT '' COMMENT '邮箱',
     phone VARCHAR(32) NOT NULL DEFAULT '' COMMENT '手机号',
     avatar VARCHAR(512) NOT NULL DEFAULT '' COMMENT '头像URL',
+    bio VARCHAR(256) NOT NULL DEFAULT '' COMMENT '个人简介',
     status TINYINT NOT NULL DEFAULT 1 COMMENT '状态 1=启用 0=禁用',
     last_login_at DATETIME DEFAULT NULL COMMENT '最近登录时间',
     login_fail_count INT NOT NULL DEFAULT 0 COMMENT '连续登录失败次数',
