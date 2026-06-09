@@ -82,3 +82,16 @@ func (d *UserDal) UpdateCompletedTours(ctx context.Context, id uint64, tours []s
 	)
 	return err
 }
+
+func (d *UserDal) UpdateProfile(ctx context.Context, id uint64, username, bio, avatar string) error {
+	q := d.getQuery(ctx).User
+	_, err := q.WithContext(ctx).Where(q.ID.Eq(id)).UpdateSimple(
+		q.Username.Value(username),
+		q.Avatar.Value(avatar),
+	)
+	if err != nil {
+		return err
+	}
+	db := database.TxFromContext(ctx, d.DB)
+	return db.WithContext(ctx).Model(&model.User{}).Where("id = ?", id).Update("bio", bio).Error
+}

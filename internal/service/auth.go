@@ -35,6 +35,7 @@ type UserRepository interface {
 	IncrementLoginFail(ctx context.Context, id uint64) error
 	LockUser(ctx context.Context, id uint64, until time.Time) error
 	UpdateCompletedTours(ctx context.Context, id uint64, tours []string) error
+	UpdateProfile(ctx context.Context, id uint64, username, bio, avatar string) error
 }
 
 type TokenRepository interface {
@@ -210,6 +211,19 @@ func (s *AuthService) GetModulePermissions(ctx context.Context, roleIDs []uint64
 		return nil, response.InternalError
 	}
 	return perms, nil
+}
+
+func (s *AuthService) UpdateProfile(ctx context.Context, userID uint64, name, bio, avatar string) (*model.User, error) {
+	if err := s.UserRepo.UpdateProfile(ctx, userID, name, bio, avatar); err != nil {
+		s.Logger.Ctx(ctx).Error("update profile failed", zap.Uint64("userID", userID), zap.Error(err))
+		return nil, response.InternalError
+	}
+	user, err := s.UserRepo.FindByID(ctx, userID)
+	if err != nil {
+		s.Logger.Ctx(ctx).Error("find user after profile update failed", zap.Uint64("userID", userID), zap.Error(err))
+		return nil, response.InternalError
+	}
+	return user, nil
 }
 
 func (s *AuthService) UpdateCompletedTours(ctx context.Context, userID uint64, newTours []string) ([]string, error) {
