@@ -22,6 +22,8 @@ type AuthServiceInterface interface {
 	GetPermissionsForRoles(ctx context.Context, roleIDs []uint64) ([]string, []string, error)
 	GetModulePermissions(ctx context.Context, roleIDs []uint64, module string) ([]string, error)
 	GetUserWithRoles(ctx context.Context, userID uint64) (*model.User, error)
+	VerifyEmail(ctx context.Context, email, code string) error
+	ResendVerifyCode(ctx context.Context, email string) error
 }
 
 type AuthHandler struct {
@@ -37,6 +39,8 @@ func (h *AuthHandler) Register(r *gin.RouterGroup) {
 		auth.POST("/sign-up", h.SignUp)
 		auth.POST("/login", h.Login)
 		auth.POST("/refresh", h.Refresh)
+		auth.POST("/verify-email", h.VerifyEmail)
+		auth.POST("/resend-verify-code", h.ResendVerifyCode)
 	}
 	authRequired := r.Group("/auth")
 	authRequired.Use(h.JWTAuth)
@@ -203,4 +207,54 @@ func (h *AuthHandler) GetPermissions(c *gin.Context) {
 	response.SuccessWithData(c, resp.PermissionsResponse{
 		Permissions: perms,
 	})
+}
+
+// VerifyEmail
+// @Summary      邮箱验证
+// @Description  使用验证码完成邮箱验证，激活账户
+// @Tags         认证
+// @Accept       json
+// @Produce      json
+// @Param        body  body  req.VerifyEmailRequest  true  "验证信息"
+// @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.Response
+// @Router       /api/v1/auth/verify-email [post]
+func (h *AuthHandler) VerifyEmail(c *gin.Context) {
+	var r req.VerifyEmailRequest
+	if err := c.ShouldBindJSON(&r); err != nil {
+		response.ParamsValidateFail(c, err)
+		return
+	}
+	if err := h.Service.VerifyEmail(c.Request.Context(), r.Email, r.Code); err != nil {
+		response.FailWithError(c, err)
+		return
+	}
+	response.Success(c)
+}
+
+// ResendVerifyCode
+// @Summary      重新发送验证码
+// @Description  重新发送邮箱验证码，需要验证人机验证码
+// @Tags         认证
+// @Accept       json
+// @Produce      json
+// @Param        body  body  req.ResendVerifyCodeRequest  true  "请求信息"
+// @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.Response
+// @Router       /api/v1/auth/resend-verify-code [post]
+func (h *AuthHandler) ResendVerifyCode(c *gin.Context) {
+	var r req.ResendVerifyCodeRequest
+	if err := c.ShouldBindJSON(&r); err != nil {
+		response.ParamsValidateFail(c, err)
+		return
+	}
+	if err := h.CaptchaService.ValidateCaptchaToken(c.Request.Context(), r.CaptchaToken); err != nil {
+		response.FailWithCode(c, response.CaptchaTokenInvalid)
+		return
+	}
+	if err := h.Service.ResendVerifyCode(c.Request.Context(), r.Email); err != nil {
+		response.FailWithError(c, err)
+		return
+	}
+	response.Success(c)
 }

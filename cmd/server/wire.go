@@ -16,6 +16,7 @@ func WireApp() (*app.App, error) {
 		provider.InfraSet,
 		provider.CronJobSet,
 		provider.CaptchaSet,
+		provider.EmailSet,
 		provider.AuthSet,
 		provider.HandlerSet,
 		provider.ServerSet,

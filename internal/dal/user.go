@@ -93,3 +93,11 @@ func (d *UserDal) UpdateProfile(ctx context.Context, id uint64, username, bio, a
 	)
 	return err
 }
+
+func (d *UserDal) EnableUser(ctx context.Context, email string) error {
+	q := d.getQuery(ctx).User
+	_, err := q.WithContext(ctx).Where(q.Email.Eq(email)).UpdateSimple(
+		q.Enabled.Value(true),
+	)
+	return err
+}

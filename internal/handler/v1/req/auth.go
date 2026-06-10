@@ -18,3 +18,15 @@ type LoginRequest struct {
 type RefreshTokenRequest struct {
 	RefreshToken string `json:"refresh_token" binding:"required"`
 }
+
+// VerifyEmailRequest 邮箱验证请求
+type VerifyEmailRequest struct {
+	Email string `json:"email" binding:"required,email" example:"john@example.com"`
+	Code  string `json:"code" binding:"required,len=6" example:"123456"`
+}
+
+// ResendVerifyCodeRequest 重新发送验证码请求
+type ResendVerifyCodeRequest struct {
+	Email        string `json:"email" binding:"required,email" example:"john@example.com"`
+	CaptchaToken string `json:"captcha_token" binding:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+}

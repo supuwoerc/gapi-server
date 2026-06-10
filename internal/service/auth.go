@@ -2,7 +2,10 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
+	"fmt"
+	"math/big"
 	"time"
 
 	"github.com/supuwoerc/gapi-server/internal/dal/model"
@@ -17,8 +20,10 @@ import (
 )
 
 const (
-	maxLoginFailCount = 5
-	lockDuration      = 30 * time.Minute
+	maxLoginFailCount    = 5
+	lockDuration         = 30 * time.Minute
+	activationCodeLength = 6
+	activationCodeExpiry = 15 * time.Minute
 )
 
 type AuthUserRepository interface {
@@ -31,6 +36,7 @@ type AuthUserRepository interface {
 	UpdateLastLogin(ctx context.Context, id uint64) error
 	IncrementLoginFail(ctx context.Context, id uint64) error
 	LockUser(ctx context.Context, id uint64, until time.Time) error
+	EnableUser(ctx context.Context, email string) error
 }
 
 type TokenRepository interface {
@@ -44,13 +50,21 @@ type AuthPermissionRepository interface {
 	FindCodesByRoleIDsAndModule(ctx context.Context, roleIDs []uint64, module string) ([]string, error)
 }
 
+type ActivationCodeRepository interface {
+	StoreActivationCode(ctx context.Context, email, code string, expiry time.Duration) error
+	GetActivationCode(ctx context.Context, email string) (string, error)
+	DeleteActivationCode(ctx context.Context, email string) error
+}
+
 type AuthService struct {
-	UserRepo   AuthUserRepository
-	TokenRepo  TokenRepository
-	PermRepo   AuthPermissionRepository
-	TxManager  *database.TransactionManager
-	JWTManager *jwt.Manager
-	Logger     *logger.Logger
+	UserRepo           AuthUserRepository
+	TokenRepo          TokenRepository
+	PermRepo           AuthPermissionRepository
+	ActivationCodeRepo ActivationCodeRepository
+	EmailSvc           *EmailService
+	TxManager          *database.TransactionManager
+	JWTManager         *jwt.Manager
+	Logger             *logger.Logger
 }
 
 func (s *AuthService) Register(ctx context.Context, username, email, password string) error {
@@ -60,7 +74,7 @@ func (s *AuthService) Register(ctx context.Context, username, email, password st
 		return response.InternalError
 	}
 
-	return s.TxManager.Transaction(ctx, func(txCtx context.Context) error {
+	if err := s.TxManager.Transaction(ctx, func(txCtx context.Context) error {
 		if _, err := s.UserRepo.FindByEmail(txCtx, email); err == nil {
 			return response.UserAlreadyExists
 		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -79,7 +93,7 @@ func (s *AuthService) Register(ctx context.Context, username, email, password st
 			Username:     username,
 			Email:        email,
 			PasswordHash: string(hash),
-			Enabled:      true,
+			Enabled:      false,
 		}
 		if err := s.UserRepo.Create(txCtx, user); err != nil {
 			if errors.Is(err, gorm.ErrDuplicatedKey) {
@@ -89,7 +103,11 @@ func (s *AuthService) Register(ctx context.Context, username, email, password st
 			return response.InternalError
 		}
 		return nil
-	})
+	}); err != nil {
+		return err
+	}
+
+	return s.sendActivationCode(ctx, email)
 }
 
 func (s *AuthService) Login(ctx context.Context, email, password string) (*jwt.TokenPair, *model.User, error) {
@@ -201,4 +219,59 @@ func (s *AuthService) GetUserWithRoles(ctx context.Context, userID uint64) (*mod
 		return nil, response.InternalError
 	}
 	return user, nil
+}
+
+func (s *AuthService) VerifyEmail(ctx context.Context, email, code string) error {
+	stored, err := s.ActivationCodeRepo.GetActivationCode(ctx, email)
+	if err != nil {
+		return response.ActivationCodeInvalid
+	}
+	if stored != code {
+		return response.ActivationCodeInvalid
+	}
+	if err := s.UserRepo.EnableUser(ctx, email); err != nil {
+		s.Logger.Ctx(ctx).Error("enable user failed", zap.String("email", email), zap.Error(err))
+		return response.InternalError
+	}
+	if err := s.ActivationCodeRepo.DeleteActivationCode(ctx, email); err != nil {
+		s.Logger.Ctx(ctx).Error("delete activation code failed", zap.String("email", email), zap.Error(err))
+	}
+	return nil
+}
+
+func (s *AuthService) ResendVerifyCode(ctx context.Context, email string) error {
+	user, err := s.UserRepo.FindByEmail(ctx, email)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return response.InvalidCredential
+		}
+		s.Logger.Ctx(ctx).Error("find user by email failed", zap.Error(err))
+		return response.InternalError
+	}
+	if user.Enabled {
+		return response.ActivationCodeInvalid
+	}
+	return s.sendActivationCode(ctx, email)
+}
+
+func (s *AuthService) sendActivationCode(ctx context.Context, email string) error {
+	code := generateActivationCode()
+	if err := s.ActivationCodeRepo.StoreActivationCode(ctx, email, code, activationCodeExpiry); err != nil {
+		s.Logger.Ctx(ctx).Error("store activation code failed", zap.Error(err))
+		return response.InternalError
+	}
+	if err := s.EmailSvc.SendVerificationCode(ctx, email, code, int(activationCodeExpiry.Minutes())); err != nil {
+		s.Logger.Ctx(ctx).Error("send activation email failed", zap.String("email", email), zap.Error(err))
+		return response.InternalError
+	}
+	return nil
+}
+
+func generateActivationCode() string {
+	code := ""
+	for range activationCodeLength {
+		n, _ := rand.Int(rand.Reader, big.NewInt(10))
+		code += fmt.Sprintf("%d", n.Int64())
+	}
+	return code
 }

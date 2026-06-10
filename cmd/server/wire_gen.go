@@ -17,6 +17,7 @@ import (
 	"github.com/supuwoerc/gapi-server/internal/server"
 	"github.com/supuwoerc/gapi-server/internal/service"
 	"github.com/supuwoerc/gapi-server/pkg/database"
+	"github.com/supuwoerc/gapi-server/pkg/email"
 	"github.com/supuwoerc/gapi-server/pkg/etcd"
 	"github.com/supuwoerc/gapi-server/pkg/logger"
 	"github.com/supuwoerc/gapi-server/pkg/redis"
@@ -78,16 +79,29 @@ func WireApp() (*app.App, error) {
 	permissionDal := &dal.PermissionDal{
 		DB: db,
 	}
+	activationCodeDal := &dal.ActivationCodeDal{
+		Redis: redisClient,
+	}
+	emailConfig := provider.ProvideEmailConfig(configConfig)
+	emailClient := email.NewClient(emailConfig, loggerLogger)
+	templateRenderer := email.NewTemplateRenderer()
+	emailService := &service.EmailService{
+		Sender:   emailClient,
+		Template: templateRenderer,
+		Logger:   loggerLogger,
+	}
 	transactionManager := database.NewTransactionManager(db)
 	jwtConfig := provider.ProvideJWTConfig(configConfig)
 	manager := provider.ProvideJWTManager(jwtConfig)
 	authService := &service.AuthService{
-		UserRepo:   userDal,
-		TokenRepo:  tokenDal,
-		PermRepo:   permissionDal,
-		TxManager:  transactionManager,
-		JWTManager: manager,
-		Logger:     loggerLogger,
+		UserRepo:           userDal,
+		TokenRepo:          tokenDal,
+		PermRepo:           permissionDal,
+		ActivationCodeRepo: activationCodeDal,
+		EmailSvc:           emailService,
+		TxManager:          transactionManager,
+		JWTManager:         manager,
+		Logger:             loggerLogger,
 	}
 	slideCaptcha := provider.ProvideSlideCaptcha()
 	clickCaptcha := provider.ProvideClickCaptcha()
