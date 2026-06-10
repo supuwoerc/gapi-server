@@ -3,6 +3,8 @@ package cronjob
 import (
 	"context"
 
+	"github.com/supuwoerc/gapi-server/internal/dal/model"
+
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
@@ -16,8 +18,8 @@ const (
 )
 
 const (
-	TriggerByScheduler = "scheduler"
-	TriggerByManual    = "manual"
+	TriggerByScheduler = model.TriggeredByScheduler
+	TriggerByManual    = model.TriggeredByManual
 )
 
 const (

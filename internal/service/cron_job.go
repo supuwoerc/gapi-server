@@ -63,7 +63,7 @@ func (s *CronJobService) SetEnabled(ctx context.Context, name string, enabled bo
 	return nil
 }
 
-func (s *CronJobService) RecordStart(ctx context.Context, jobName, triggeredBy string) (uint64, error) {
+func (s *CronJobService) RecordStart(ctx context.Context, jobName string, triggeredBy model.TriggeredBy) (uint64, error) {
 	exec := &model.CronJobExecution{
 		JobName:     jobName,
 		Status:      cronjob.StatusRunning,

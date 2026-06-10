@@ -28,7 +28,7 @@ func resolvePermissions(rows []codeWithEffect) []string {
 	denySet := make(map[string]struct{})
 	for _, row := range rows {
 		switch row.Effect {
-		case "deny":
+		case string(model.PermissionEffectDeny):
 			denySet[row.Code] = struct{}{}
 		default:
 			allowSet[row.Code] = struct{}{}

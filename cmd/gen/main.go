@@ -51,13 +51,19 @@ func main() {
 	)
 
 	roleModel := g.GenerateModelAs("sys_role", "Role")
-	permModel := g.GenerateModelAs("sys_permission", "Permission")
+	permModel := g.GenerateModelAs("sys_permission", "Permission",
+		gen.FieldType("resource_type", "ResourceType"),
+		gen.FieldType("action", "PermissionAction"),
+	)
 
 	g.ApplyBasic(
 		g.GenerateModelAs("sys_cron_job", "CronJob"),
-		g.GenerateModelAs("sys_cron_job_execution", "CronJobExecution"),
+		g.GenerateModelAs("sys_cron_job_execution", "CronJobExecution",
+			gen.FieldType("triggered_by", "TriggeredBy"),
+		),
 		g.GenerateModelAs("sys_user", "User",
 			gen.FieldJSONTag("password_hash", "-"),
+			gen.FieldType("enabled", "bool"),
 			gen.FieldType("completed_tours", "datatypes.JSONSlice[string]"),
 			gen.FieldRelate(field.Many2Many, "Roles", roleModel, &field.RelateConfig{
 				GORMTag: field.GormTag{"many2many": {"sys_user_role"}},
@@ -65,6 +71,7 @@ func main() {
 		),
 		g.GenerateModelAs("sys_user_role", "UserRole"),
 		g.GenerateModelAs("sys_role", "Role",
+			gen.FieldType("enabled", "bool"),
 			gen.FieldRelate(field.Many2Many, "Permissions", permModel, &field.RelateConfig{
 				GORMTag: field.GormTag{"many2many": {"sys_role_permission"}},
 			}),
@@ -77,7 +84,9 @@ func main() {
 				GORMTag:     field.GormTag{"foreignKey": {"ParentID"}},
 			}),
 		),
-		g.GenerateModelAs("sys_role_permission", "RolePermission"),
+		g.GenerateModelAs("sys_role_permission", "RolePermission",
+			gen.FieldType("effect", "PermissionEffect"),
+		),
 		g.GenerateModelAs("sys_permission", "Permission"),
 	)
 	g.Execute()

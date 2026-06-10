@@ -17,10 +17,10 @@ type Permission struct {
 	ID           uint64                `gorm:"column:id;type:bigint unsigned;primaryKey;autoIncrement:true" json:"id"`
 	Code         string                `gorm:"column:code;type:varchar(128);not null;uniqueIndex:idx_code,priority:1;comment:权限标识 eg:user:create" json:"code"`
 	Name         string                `gorm:"column:name;type:varchar(128);not null;comment:权限显示名称" json:"name"`
-	ResourceType int32                 `gorm:"column:resource_type;type:tinyint;not null;index:idx_module_resource_type,priority:2;comment:资源类型 1=api 2=frontend-menu 3=frontend-route 4=frontend-button 5=data" json:"resource_type"`
+	ResourceType ResourceType          `gorm:"column:resource_type;type:tinyint;not null;index:idx_module_resource_type,priority:2;comment:资源类型 1=api 2=frontend-menu 3=frontend-route 4=frontend-button 5=data" json:"resource_type"`
 	Module       string                `gorm:"column:module;type:varchar(64);not null;default:'';index:idx_module_resource_type,priority:1;comment:所属模块" json:"module"`
 	ResourcePath string                `gorm:"column:resource_path;type:varchar(256);not null;comment:资源路径" json:"resource_path"`
-	Action       string                `gorm:"column:action;type:varchar(32);not null;comment:操作 create/read/update/delete" json:"action"`
+	Action       PermissionAction      `gorm:"column:action;type:varchar(32);not null;comment:操作 create/read/update/delete" json:"action"`
 	Description  string                `gorm:"column:description;type:varchar(256);not null;comment:权限描述" json:"description"`
 	CreatedAt    time.Time             `gorm:"column:created_at;type:datetime;not null" json:"created_at"`
 	UpdatedAt    time.Time             `gorm:"column:updated_at;type:datetime;not null" json:"updated_at"`

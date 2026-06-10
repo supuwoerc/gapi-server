@@ -79,7 +79,7 @@ func (s *AuthService) Register(ctx context.Context, username, email, password st
 			Username:     username,
 			Email:        email,
 			PasswordHash: string(hash),
-			Status:       1,
+			Enabled:      true,
 		}
 		if err := s.UserRepo.Create(txCtx, user); err != nil {
 			if errors.Is(err, gorm.ErrDuplicatedKey) {
@@ -102,7 +102,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (*jwt.T
 		return nil, nil, response.InternalError
 	}
 
-	if user.Status == 0 {
+	if !user.Enabled {
 		return nil, nil, response.UserDisabled
 	}
 

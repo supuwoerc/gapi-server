@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/supuwoerc/gapi-server/internal/config"
+	"github.com/supuwoerc/gapi-server/internal/dal/model"
 
 	"github.com/pkg/errors"
 	"github.com/robfig/cron/v3"
@@ -16,7 +17,7 @@ import (
 type JobRecorder interface {
 	SyncJobDefinitions(ctx context.Context, jobs []SystemJob) error
 	IsJobEnabled(ctx context.Context, name string) (bool, error)
-	RecordStart(ctx context.Context, jobName, triggeredBy string) (uint64, error)
+	RecordStart(ctx context.Context, jobName string, triggeredBy model.TriggeredBy) (uint64, error)
 	RecordEnd(ctx context.Context, executionID uint64, status string, jobErr error) error
 	UpdateLastRun(ctx context.Context, name string, status string) error
 }
@@ -217,7 +218,7 @@ func (m *JobManager) wrapJob(j SystemJob) cron.Job {
 	}
 }
 
-func (m *JobManager) executeWithRecording(ctx context.Context, j SystemJob, triggeredBy string) {
+func (m *JobManager) executeWithRecording(ctx context.Context, j SystemJob, triggeredBy model.TriggeredBy) {
 	execID, err := m.recorder.RecordStart(ctx, j.Name(), triggeredBy)
 	if err != nil {
 		m.logger.Error("cron: failed to record job start", zap.String("job", j.Name()), zap.Error(err))

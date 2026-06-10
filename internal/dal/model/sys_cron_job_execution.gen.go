@@ -21,7 +21,7 @@ type CronJobExecution struct {
 	EndedAt     *time.Time            `gorm:"column:ended_at;type:datetime;comment:结束时间" json:"ended_at"`                                                         // 结束时间
 	Duration    *int64                `gorm:"column:duration;type:bigint;comment:耗时（毫秒）" json:"duration"`                                                         // 耗时（毫秒）
 	Error       string                `gorm:"column:error;type:text;not null;comment:错误信息" json:"error"`                                                          // 错误信息
-	TriggeredBy string                `gorm:"column:triggered_by;type:varchar(32);not null;default:scheduler;comment:触发方式(scheduler/manual)" json:"triggered_by"` // 触发方式(scheduler/manual)
+	TriggeredBy TriggeredBy           `gorm:"column:triggered_by;type:varchar(32);not null;default:scheduler;comment:触发方式(scheduler/manual)" json:"triggered_by"` // 触发方式(scheduler/manual)
 	CreatedAt   time.Time             `gorm:"column:created_at;type:datetime;not null" json:"created_at"`
 	UpdatedAt   time.Time             `gorm:"column:updated_at;type:datetime;not null" json:"updated_at"`
 	DeletedAt   soft_delete.DeletedAt `gorm:"column:deleted_at;type:bigint unsigned;not null;index;softDelete:milli" json:"deleted_at,omitempty"`

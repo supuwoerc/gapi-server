@@ -35,7 +35,7 @@ func newUser(db *gorm.DB, opts ...gen.DOOption) user {
 	_user.Phone = field.NewString(tableName, "phone")
 	_user.Avatar = field.NewString(tableName, "avatar")
 	_user.Bio = field.NewString(tableName, "bio")
-	_user.Status = field.NewInt32(tableName, "status")
+	_user.Enabled = field.NewBool(tableName, "enabled")
 	_user.LastLoginAt = field.NewTime(tableName, "last_login_at")
 	_user.LoginFailCount = field.NewInt32(tableName, "login_fail_count")
 	_user.LockedUntil = field.NewTime(tableName, "locked_until")
@@ -66,7 +66,7 @@ type user struct {
 	Phone          field.String // 手机号
 	Avatar         field.String // 头像URL
 	Bio            field.String // 个人简介
-	Status         field.Int32  // 状态 1=启用 0=禁用
+	Enabled        field.Bool   // 是否启用
 	LastLoginAt    field.Time   // 最近登录时间
 	LoginFailCount field.Int32  // 连续登录失败次数
 	LockedUntil    field.Time   // 锁定截止时间
@@ -98,7 +98,7 @@ func (u *user) updateTableName(table string) *user {
 	u.Phone = field.NewString(table, "phone")
 	u.Avatar = field.NewString(table, "avatar")
 	u.Bio = field.NewString(table, "bio")
-	u.Status = field.NewInt32(table, "status")
+	u.Enabled = field.NewBool(table, "enabled")
 	u.LastLoginAt = field.NewTime(table, "last_login_at")
 	u.LoginFailCount = field.NewInt32(table, "login_fail_count")
 	u.LockedUntil = field.NewTime(table, "locked_until")
@@ -138,7 +138,7 @@ func (u *user) fillFieldMap() {
 	u.fieldMap["phone"] = u.Phone
 	u.fieldMap["avatar"] = u.Avatar
 	u.fieldMap["bio"] = u.Bio
-	u.fieldMap["status"] = u.Status
+	u.fieldMap["enabled"] = u.Enabled
 	u.fieldMap["last_login_at"] = u.LastLoginAt
 	u.fieldMap["login_fail_count"] = u.LoginFailCount
 	u.fieldMap["locked_until"] = u.LockedUntil

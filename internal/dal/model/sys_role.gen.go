@@ -20,7 +20,7 @@ type Role struct {
 	ParentID    *uint64               `gorm:"column:parent_id;type:bigint unsigned;index:idx_parent_id,priority:1;comment:父角色ID" json:"parent_id"` // 父角色ID
 	Description string                `gorm:"column:description;type:varchar(256);not null;comment:角色描述" json:"description"`                       // 角色描述
 	SortOrder   int32                 `gorm:"column:sort_order;type:int;not null;comment:排序" json:"sort_order"`                                    // 排序
-	Status      int32                 `gorm:"column:status;type:tinyint;not null;default:1;comment:状态 1=启用 0=禁用" json:"status"`                    // 状态 1=启用 0=禁用
+	Enabled     bool                  `gorm:"column:enabled;type:tinyint(1);not null;default:1;comment:是否启用" json:"enabled"`                       // 是否启用
 	CreatedAt   time.Time             `gorm:"column:created_at;type:datetime;not null" json:"created_at"`
 	UpdatedAt   time.Time             `gorm:"column:updated_at;type:datetime;not null" json:"updated_at"`
 	DeletedAt   soft_delete.DeletedAt `gorm:"column:deleted_at;type:bigint unsigned;not null;index;softDelete:milli" json:"deleted_at,omitempty"`

@@ -34,7 +34,7 @@ func newRole(db *gorm.DB, opts ...gen.DOOption) role {
 	_role.ParentID = field.NewUint64(tableName, "parent_id")
 	_role.Description = field.NewString(tableName, "description")
 	_role.SortOrder = field.NewInt32(tableName, "sort_order")
-	_role.Status = field.NewInt32(tableName, "status")
+	_role.Enabled = field.NewBool(tableName, "enabled")
 	_role.CreatedAt = field.NewTime(tableName, "created_at")
 	_role.UpdatedAt = field.NewTime(tableName, "updated_at")
 	_role.DeletedAt = field.NewField(tableName, "deleted_at")
@@ -72,7 +72,7 @@ type role struct {
 	ParentID    field.Uint64 // 父角色ID
 	Description field.String // 角色描述
 	SortOrder   field.Int32  // 排序
-	Status      field.Int32  // 状态 1=启用 0=禁用
+	Enabled     field.Bool   // 是否启用
 	CreatedAt   field.Time
 	UpdatedAt   field.Time
 	DeletedAt   field.Field
@@ -103,7 +103,7 @@ func (r *role) updateTableName(table string) *role {
 	r.ParentID = field.NewUint64(table, "parent_id")
 	r.Description = field.NewString(table, "description")
 	r.SortOrder = field.NewInt32(table, "sort_order")
-	r.Status = field.NewInt32(table, "status")
+	r.Enabled = field.NewBool(table, "enabled")
 	r.CreatedAt = field.NewTime(table, "created_at")
 	r.UpdatedAt = field.NewTime(table, "updated_at")
 	r.DeletedAt = field.NewField(table, "deleted_at")
@@ -138,7 +138,7 @@ func (r *role) fillFieldMap() {
 	r.fieldMap["parent_id"] = r.ParentID
 	r.fieldMap["description"] = r.Description
 	r.fieldMap["sort_order"] = r.SortOrder
-	r.fieldMap["status"] = r.Status
+	r.fieldMap["enabled"] = r.Enabled
 	r.fieldMap["created_at"] = r.CreatedAt
 	r.fieldMap["updated_at"] = r.UpdatedAt
 	r.fieldMap["deleted_at"] = r.DeletedAt

@@ -61,7 +61,7 @@ func NewCronJobExecutionItem(m *model.CronJobExecution) *CronJobExecutionItem {
 		EndedAt:     m.EndedAt,
 		Duration:    m.Duration,
 		Error:       m.Error,
-		TriggeredBy: m.TriggeredBy,
+		TriggeredBy: string(m.TriggeredBy),
 		CreatedAt:   m.CreatedAt,
 	}
 }
