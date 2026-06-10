@@ -61,6 +61,7 @@ type Config struct {
 	Cron      CronConfig     `mapstructure:"cron"`     // 定时任务配置
 	Etcd      EtcdConfig     `mapstructure:"etcd"`     // Etcd 配置
 	JWT       JWTConfig      `mapstructure:"jwt"`      // JWT 配置
+	Email     EmailConfig    `mapstructure:"email"`    // 邮件配置
 	Env       string         `mapstructure:"-"`        // 运行环境 (dev/prod/test)
 }
 
@@ -135,6 +136,17 @@ type JWTConfig struct {
 	AccessTokenExpiry  int    `mapstructure:"access_token_expiry"`  // access_token 有效期 (分钟)
 	RefreshTokenExpiry int    `mapstructure:"refresh_token_expiry"` // refresh_token 有效期 (小时)
 	Issuer             string `mapstructure:"issuer"`               // 签发者
+}
+
+// EmailConfig holds SMTP email client settings.
+type EmailConfig struct {
+	Host        string `mapstructure:"host"`         // SMTP 服务器地址
+	Port        int    `mapstructure:"port"`         // SMTP 端口
+	Username    string `mapstructure:"username"`     // SMTP 用户名
+	Password    string `mapstructure:"password"`     // SMTP 密码
+	FromName    string `mapstructure:"from_name"`    // 发件人名称
+	FromAddress string `mapstructure:"from_address"` // 发件人地址
+	UseTLS      bool   `mapstructure:"use_tls"`      // 是否使用 TLS
 }
 
 // DynConfigOptions holds dynamic configuration center settings.

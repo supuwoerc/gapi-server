@@ -20,6 +20,7 @@ var ConfigSet = wire.NewSet(
 	ProvideLocaleConfig,
 	ProvideCronConfig,
 	ProvideJWTConfig,
+	ProvideEmailConfig,
 )
 
 func ProvideLogConfig(cfg *config.BootstrapConfig) *config.LogConfig {
@@ -60,4 +61,8 @@ func ProvideCronConfig(cfg *config.Config) *config.CronConfig {
 
 func ProvideJWTConfig(cfg *config.Config) *config.JWTConfig {
 	return &cfg.JWT
+}
+
+func ProvideEmailConfig(cfg *config.Config) *config.EmailConfig {
+	return &cfg.Email
 }

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>验证码</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f4f4f7;padding:40px 0;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="480" cellspacing="0" cellpadding="0" style="background-color:#ffffff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.06);padding:40px;">
+                    <tr>
+                        <td align="center" style="padding-bottom:24px;">
+                            <h1 style="margin:0;font-size:22px;color:#333333;">{{.AppName}}</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding-bottom:16px;font-size:15px;color:#555555;line-height:1.6;">
+                            您好，您正在进行邮箱验证操作，验证码如下：
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center" style="padding:24px 0;">
+                            <div style="display:inline-block;padding:12px 32px;background-color:#f0f4ff;border-radius:6px;font-size:32px;font-weight:bold;letter-spacing:6px;color:#1a56db;">
+                                {{.Code}}
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding-top:16px;font-size:13px;color:#999999;line-height:1.6;">
+                            验证码 {{.ExpireMinutes}} 分钟内有效，请勿将验证码泄露给他人。如非本人操作，请忽略此邮件。
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

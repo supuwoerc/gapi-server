@@ -59,6 +59,15 @@ jwt:
   refresh_token_expiry: 168          # refresh_token 有效期 (小时, 168 = 7天)
   issuer: "gapi-server"             # 签发者
 
+email:
+  host: "localhost"                  # SMTP 服务器地址
+  port: 1025                         # SMTP 端口 (1025 = mailhog 默认端口)
+  username: ""                       # SMTP 用户名
+  password: ""                       # SMTP 密码
+  from_name: "GAPI"                  # 发件人名称
+  from_address: "noreply@gapi.dev"   # 发件人地址
+  use_tls: false                     # 是否使用 TLS
+
 etcd:
   endpoints:                     # etcd 节点地址列表
     - "127.0.0.1:2379"
