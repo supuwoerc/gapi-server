@@ -18,7 +18,7 @@ type User struct {
 	ID             uint64                      `gorm:"column:id;type:bigint unsigned;primaryKey;autoIncrement:true" json:"id"`
 	Username       string                      `gorm:"column:username;type:varchar(64);not null;uniqueIndex:idx_username,priority:1;comment:登录名" json:"username"` // 登录名
 	PasswordHash   string                      `gorm:"column:password_hash;type:varchar(256);not null;comment:密码哈希" json:"-"`                                     // 密码哈希
-	Email          string                      `gorm:"column:email;type:varchar(128);not null;comment:邮箱" json:"email"`                                           // 邮箱
+	Email          string                      `gorm:"column:email;type:varchar(128);not null;uniqueIndex:idx_email,priority:1;comment:邮箱" json:"email"`          // 邮箱
 	Phone          string                      `gorm:"column:phone;type:varchar(32);not null;comment:手机号" json:"phone"`                                           // 手机号
 	Avatar         string                      `gorm:"column:avatar;type:varchar(512);not null;comment:头像URL" json:"avatar"`                                      // 头像URL
 	Bio            string                      `gorm:"column:bio;type:varchar(256);not null;comment:个人简介" json:"bio"`                                             // 个人简介

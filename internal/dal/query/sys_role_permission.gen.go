@@ -31,7 +31,7 @@ func newRolePermission(db *gorm.DB, opts ...gen.DOOption) rolePermission {
 	_rolePermission.ID = field.NewUint64(tableName, "id")
 	_rolePermission.RoleID = field.NewUint64(tableName, "role_id")
 	_rolePermission.PermissionID = field.NewUint64(tableName, "permission_id")
-	_rolePermission.Effect = field.NewString(tableName, "effect")
+	_rolePermission.Effect = field.NewField(tableName, "effect")
 	_rolePermission.CreatedAt = field.NewTime(tableName, "created_at")
 	_rolePermission.UpdatedAt = field.NewTime(tableName, "updated_at")
 	_rolePermission.DeletedAt = field.NewField(tableName, "deleted_at")
@@ -49,7 +49,7 @@ type rolePermission struct {
 	ID           field.Uint64
 	RoleID       field.Uint64 // 角色ID
 	PermissionID field.Uint64 // 权限ID
-	Effect       field.String // 效果 allow/deny
+	Effect       field.Field  // 效果 allow/deny
 	CreatedAt    field.Time
 	UpdatedAt    field.Time
 	DeletedAt    field.Field
@@ -72,7 +72,7 @@ func (r *rolePermission) updateTableName(table string) *rolePermission {
 	r.ID = field.NewUint64(table, "id")
 	r.RoleID = field.NewUint64(table, "role_id")
 	r.PermissionID = field.NewUint64(table, "permission_id")
-	r.Effect = field.NewString(table, "effect")
+	r.Effect = field.NewField(table, "effect")
 	r.CreatedAt = field.NewTime(table, "created_at")
 	r.UpdatedAt = field.NewTime(table, "updated_at")
 	r.DeletedAt = field.NewField(table, "deleted_at")

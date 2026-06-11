@@ -20,7 +20,7 @@ type RolePermission struct {
 	Effect       PermissionEffect      `gorm:"column:effect;type:varchar(8);not null;default:allow;comment:效果 allow/deny" json:"effect"`                                                                    // 效果 allow/deny
 	CreatedAt    time.Time             `gorm:"column:created_at;type:datetime;not null" json:"created_at"`
 	UpdatedAt    time.Time             `gorm:"column:updated_at;type:datetime;not null" json:"updated_at"`
-	DeletedAt    soft_delete.DeletedAt `gorm:"column:deleted_at;type:bigint unsigned;not null;index;softDelete:milli" json:"deleted_at,omitempty"`
+	DeletedAt    soft_delete.DeletedAt `gorm:"column:deleted_at;type:bigint unsigned;not null;uniqueIndex:uk_role_perm,priority:3;index;softDelete:milli" json:"deleted_at,omitempty"`
 }
 
 // TableName RolePermission's table name

@@ -19,7 +19,7 @@ type UserRole struct {
 	RoleID    uint64                `gorm:"column:role_id;type:bigint unsigned;not null;uniqueIndex:uk_user_role,priority:2;index:idx_role_id,priority:1;comment:角色ID" json:"role_id"` // 角色ID
 	CreatedAt time.Time             `gorm:"column:created_at;type:datetime;not null" json:"created_at"`
 	UpdatedAt time.Time             `gorm:"column:updated_at;type:datetime;not null" json:"updated_at"`
-	DeletedAt soft_delete.DeletedAt `gorm:"column:deleted_at;type:bigint unsigned;not null;index;softDelete:milli" json:"deleted_at,omitempty"`
+	DeletedAt soft_delete.DeletedAt `gorm:"column:deleted_at;type:bigint unsigned;not null;uniqueIndex:uk_user_role,priority:3;index;softDelete:milli" json:"deleted_at,omitempty"`
 }
 
 // TableName UserRole's table name

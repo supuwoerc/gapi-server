@@ -31,10 +31,10 @@ func newPermission(db *gorm.DB, opts ...gen.DOOption) permission {
 	_permission.ID = field.NewUint64(tableName, "id")
 	_permission.Code = field.NewString(tableName, "code")
 	_permission.Name = field.NewString(tableName, "name")
-	_permission.ResourceType = field.NewInt32(tableName, "resource_type")
+	_permission.ResourceType = field.NewField(tableName, "resource_type")
 	_permission.Module = field.NewString(tableName, "module")
 	_permission.ResourcePath = field.NewString(tableName, "resource_path")
-	_permission.Action = field.NewString(tableName, "action")
+	_permission.Action = field.NewField(tableName, "action")
 	_permission.Description = field.NewString(tableName, "description")
 	_permission.CreatedAt = field.NewTime(tableName, "created_at")
 	_permission.UpdatedAt = field.NewTime(tableName, "updated_at")
@@ -53,10 +53,10 @@ type permission struct {
 	ID           field.Uint64
 	Code         field.String // 权限标识 eg:user:create
 	Name         field.String // 权限显示名称
-	ResourceType field.Int32  // 资源类型 1=api 2=frontend-menu 3=frontend-route 4=frontend-button 5=data
+	ResourceType field.Field  // 资源类型 1=api 2=frontend-menu 3=frontend-route 4=frontend-button 5=data
 	Module       field.String // 所属模块
 	ResourcePath field.String // 资源路径
-	Action       field.String // 操作 create/read/update/delete
+	Action       field.Field  // 操作 create/read/update/delete
 	Description  field.String // 权限描述
 	CreatedAt    field.Time
 	UpdatedAt    field.Time
@@ -80,10 +80,10 @@ func (p *permission) updateTableName(table string) *permission {
 	p.ID = field.NewUint64(table, "id")
 	p.Code = field.NewString(table, "code")
 	p.Name = field.NewString(table, "name")
-	p.ResourceType = field.NewInt32(table, "resource_type")
+	p.ResourceType = field.NewField(table, "resource_type")
 	p.Module = field.NewString(table, "module")
 	p.ResourcePath = field.NewString(table, "resource_path")
-	p.Action = field.NewString(table, "action")
+	p.Action = field.NewField(table, "action")
 	p.Description = field.NewString(table, "description")
 	p.CreatedAt = field.NewTime(table, "created_at")
 	p.UpdatedAt = field.NewTime(table, "updated_at")

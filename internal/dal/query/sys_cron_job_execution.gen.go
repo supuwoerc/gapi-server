@@ -35,7 +35,7 @@ func newCronJobExecution(db *gorm.DB, opts ...gen.DOOption) cronJobExecution {
 	_cronJobExecution.EndedAt = field.NewTime(tableName, "ended_at")
 	_cronJobExecution.Duration = field.NewInt64(tableName, "duration")
 	_cronJobExecution.Error = field.NewString(tableName, "error")
-	_cronJobExecution.TriggeredBy = field.NewString(tableName, "triggered_by")
+	_cronJobExecution.TriggeredBy = field.NewField(tableName, "triggered_by")
 	_cronJobExecution.CreatedAt = field.NewTime(tableName, "created_at")
 	_cronJobExecution.UpdatedAt = field.NewTime(tableName, "updated_at")
 	_cronJobExecution.DeletedAt = field.NewField(tableName, "deleted_at")
@@ -57,7 +57,7 @@ type cronJobExecution struct {
 	EndedAt     field.Time   // 结束时间
 	Duration    field.Int64  // 耗时（毫秒）
 	Error       field.String // 错误信息
-	TriggeredBy field.String // 触发方式(scheduler/manual)
+	TriggeredBy field.Field  // 触发方式(scheduler/manual)
 	CreatedAt   field.Time
 	UpdatedAt   field.Time
 	DeletedAt   field.Field
@@ -84,7 +84,7 @@ func (c *cronJobExecution) updateTableName(table string) *cronJobExecution {
 	c.EndedAt = field.NewTime(table, "ended_at")
 	c.Duration = field.NewInt64(table, "duration")
 	c.Error = field.NewString(table, "error")
-	c.TriggeredBy = field.NewString(table, "triggered_by")
+	c.TriggeredBy = field.NewField(table, "triggered_by")
 	c.CreatedAt = field.NewTime(table, "created_at")
 	c.UpdatedAt = field.NewTime(table, "updated_at")
 	c.DeletedAt = field.NewField(table, "deleted_at")

@@ -56,7 +56,7 @@ func (d *PermissionDal) FindCodesByRoleIDsAndResourceType(ctx context.Context, r
 		Select(p.Code, rp.Effect).
 		Join(rp, rp.PermissionID.EqCol(p.ID)).
 		Where(rp.RoleID.In(roleIDs...)).
-		Where(p.ResourceType.Eq(int32(resourceType))).
+		Where(p.ResourceType.Eq(resourceType)).
 		Scan(&rows)
 	if err != nil {
 		return nil, err

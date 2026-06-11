@@ -87,7 +87,7 @@ func main() {
 		g.GenerateModelAs("sys_role_permission", "RolePermission",
 			gen.FieldType("effect", "PermissionEffect"),
 		),
-		g.GenerateModelAs("sys_permission", "Permission"),
+		permModel,
 	)
 	g.Execute()
 }
