@@ -15,6 +15,12 @@ func (i *ResourceType) Scan(src any) error {
 		*i = ResourceType(v)
 	case int:
 		*i = ResourceType(v)
+	case string:
+		n, err := strconv.Atoi(v)
+		if err != nil {
+			return fmt.Errorf("cannot scan %T (%v) into ResourceType", src, src)
+		}
+		*i = ResourceType(n)
 	case []byte:
 		n, err := strconv.Atoi(string(v))
 		if err != nil {
