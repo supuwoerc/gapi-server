@@ -54,6 +54,9 @@ func main() {
 	permModel := g.GenerateModelAs("sys_permission", "Permission",
 		gen.FieldType("resource_type", "ResourceType"),
 		gen.FieldType("action", "PermissionAction"),
+		gen.FieldRelate(field.Many2Many, "Roles", roleModel, &field.RelateConfig{
+			GORMTag: field.GormTag{"many2many": {"sys_role_permission"}},
+		}),
 	)
 
 	g.ApplyBasic(
