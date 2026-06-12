@@ -39,6 +39,11 @@ func newPermission(db *gorm.DB, opts ...gen.DOOption) permission {
 	_permission.CreatedAt = field.NewTime(tableName, "created_at")
 	_permission.UpdatedAt = field.NewTime(tableName, "updated_at")
 	_permission.DeletedAt = field.NewField(tableName, "deleted_at")
+	_permission.Roles = permissionManyToManyRoles{
+		db: db.Session(&gorm.Session{}),
+
+		RelationField: field.NewRelation("Roles", "model.Role"),
+	}
 
 	_permission.fillFieldMap()
 
@@ -61,6 +66,7 @@ type permission struct {
 	CreatedAt    field.Time
 	UpdatedAt    field.Time
 	DeletedAt    field.Field
+	Roles        permissionManyToManyRoles
 
 	fieldMap map[string]field.Expr
 }
@@ -114,7 +120,7 @@ func (p *permission) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (p *permission) fillFieldMap() {
-	p.fieldMap = make(map[string]field.Expr, 11)
+	p.fieldMap = make(map[string]field.Expr, 12)
 	p.fieldMap["id"] = p.ID
 	p.fieldMap["code"] = p.Code
 	p.fieldMap["name"] = p.Name
@@ -126,16 +132,101 @@ func (p *permission) fillFieldMap() {
 	p.fieldMap["created_at"] = p.CreatedAt
 	p.fieldMap["updated_at"] = p.UpdatedAt
 	p.fieldMap["deleted_at"] = p.DeletedAt
+
 }
 
 func (p permission) clone(db *gorm.DB) permission {
 	p.permissionDo.ReplaceConnPool(db.Statement.ConnPool)
+	p.Roles.db = db.Session(&gorm.Session{Initialized: true})
+	p.Roles.db.Statement.ConnPool = db.Statement.ConnPool
 	return p
 }
 
 func (p permission) replaceDB(db *gorm.DB) permission {
 	p.permissionDo.ReplaceDB(db)
+	p.Roles.db = db.Session(&gorm.Session{})
 	return p
+}
+
+type permissionManyToManyRoles struct {
+	db *gorm.DB
+
+	field.RelationField
+}
+
+func (a permissionManyToManyRoles) Where(conds ...field.Expr) *permissionManyToManyRoles {
+	if len(conds) == 0 {
+		return &a
+	}
+
+	exprs := make([]clause.Expression, 0, len(conds))
+	for _, cond := range conds {
+		exprs = append(exprs, cond.BeCond().(clause.Expression))
+	}
+	a.db = a.db.Clauses(clause.Where{Exprs: exprs})
+	return &a
+}
+
+func (a permissionManyToManyRoles) WithContext(ctx context.Context) *permissionManyToManyRoles {
+	a.db = a.db.WithContext(ctx)
+	return &a
+}
+
+func (a permissionManyToManyRoles) Session(session *gorm.Session) *permissionManyToManyRoles {
+	a.db = a.db.Session(session)
+	return &a
+}
+
+func (a permissionManyToManyRoles) Model(m *model.Permission) *permissionManyToManyRolesTx {
+	return &permissionManyToManyRolesTx{a.db.Model(m).Association(a.Name())}
+}
+
+func (a permissionManyToManyRoles) Unscoped() *permissionManyToManyRoles {
+	a.db = a.db.Unscoped()
+	return &a
+}
+
+type permissionManyToManyRolesTx struct{ tx *gorm.Association }
+
+func (a permissionManyToManyRolesTx) Find() (result []*model.Role, err error) {
+	return result, a.tx.Find(&result)
+}
+
+func (a permissionManyToManyRolesTx) Append(values ...*model.Role) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Append(targetValues...)
+}
+
+func (a permissionManyToManyRolesTx) Replace(values ...*model.Role) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Replace(targetValues...)
+}
+
+func (a permissionManyToManyRolesTx) Delete(values ...*model.Role) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Delete(targetValues...)
+}
+
+func (a permissionManyToManyRolesTx) Clear() error {
+	return a.tx.Clear()
+}
+
+func (a permissionManyToManyRolesTx) Count() int64 {
+	return a.tx.Count()
+}
+
+func (a permissionManyToManyRolesTx) Unscoped() *permissionManyToManyRolesTx {
+	a.tx = a.tx.Unscoped()
+	return &a
 }
 
 type permissionDo struct{ gen.DO }

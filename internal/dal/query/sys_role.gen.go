@@ -42,6 +42,11 @@ func newRole(db *gorm.DB, opts ...gen.DOOption) role {
 		db: db.Session(&gorm.Session{}),
 
 		RelationField: field.NewRelation("Permissions", "model.Permission"),
+		Roles: struct {
+			field.RelationField
+		}{
+			RelationField: field.NewRelation("Permissions.Roles", "model.Role"),
+		},
 	}
 
 	_role.Parent = roleBelongsToParent{
@@ -168,6 +173,10 @@ type roleManyToManyPermissions struct {
 	db *gorm.DB
 
 	field.RelationField
+
+	Roles struct {
+		field.RelationField
+	}
 }
 
 func (a roleManyToManyPermissions) Where(conds ...field.Expr) *roleManyToManyPermissions {
