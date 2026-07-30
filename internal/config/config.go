@@ -84,13 +84,15 @@ type ServerConfig struct {
 	MaxMultipartMemory int64  `mapstructure:"max_multipart_memory"` // 文件上传内存限制 (MB)
 }
 
-// DatabaseConfig holds MySQL connection and pool settings.
+// DatabaseConfig holds PostgreSQL connection and pool settings.
 type DatabaseConfig struct {
 	Host            string `mapstructure:"host"`              // 数据库主机地址
 	Port            int    `mapstructure:"port"`              // 数据库端口
 	User            string `mapstructure:"user"`              // 数据库用户名
 	Password        string `mapstructure:"password"`          // 数据库密码
 	DBName          string `mapstructure:"dbname"`            // 数据库名称
+	SSLMode         string `mapstructure:"sslmode"`           // SSL 模式 (disable/require/verify-ca/verify-full)
+	TimeZone        string `mapstructure:"timezone"`          // 连接时区 (如 Asia/Shanghai)
 	MaxIdleConns    int    `mapstructure:"max_idle_conns"`    // 连接池最大空闲连接数
 	MaxOpenConns    int    `mapstructure:"max_open_conns"`    // 连接池最大打开连接数
 	ConnMaxLifetime int    `mapstructure:"conn_max_lifetime"` // 连接最大存活时间 (单位: 秒)

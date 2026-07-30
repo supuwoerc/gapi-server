@@ -8,7 +8,7 @@ import (
 	"github.com/supuwoerc/gapi-server/pkg/logger"
 
 	"github.com/pkg/errors"
-	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
@@ -17,12 +17,22 @@ import (
 const tablePrefix = "sys_"
 
 func NewConnection(cfg *config.DatabaseConfig, l *logger.Logger) (*gorm.DB, error) {
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		cfg.User,
-		cfg.Password,
+	sslMode := cfg.SSLMode
+	if sslMode == "" {
+		sslMode = "disable"
+	}
+	timeZone := cfg.TimeZone
+	if timeZone == "" {
+		timeZone = "Asia/Shanghai"
+	}
+	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s TimeZone=%s",
 		cfg.Host,
 		cfg.Port,
+		cfg.User,
+		cfg.Password,
 		cfg.DBName,
+		sslMode,
+		timeZone,
 	)
 
 	logLevel := gormlogger.LogLevel(cfg.LogLevel)
@@ -35,7 +45,7 @@ func NewConnection(cfg *config.DatabaseConfig, l *logger.Logger) (*gorm.DB, erro
 	}
 	gormLogger := NewGormLogger(l, logLevel, slowThreshold)
 
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		NamingStrategy: schema.NamingStrategy{
 			TablePrefix:   tablePrefix,
 			SingularTable: true,

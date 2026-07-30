@@ -23,7 +23,7 @@
   | `gorm.io/plugin/dbresolver` | v1.6.2（已最新） | v1.6.2 |
 
 - **pgx 必须显式升级。** `go get gorm.io/driver/postgres@latest` 只会拉到 pgx **v5.6.0** —— Go 的最小版本选择（MVS）取驱动声明的下界，而非 pgx 的最新版。要拿到 v5.10.0 必须单独 `go get github.com/jackc/pgx/v5@latest`。
-- **`gorm.io/driver/mysql` 无法从 go.mod 移除。** `gorm.io/gen` 对它有传递依赖（`gorm.io/gen@v0.3.28 → gorm.io/driver/mysql@v1.5.7`），`go mod tidy` 会把它作为 `// indirect` 重新写回。目标是让它从 `require` 直接块降级为 indirect，而不是消失。`github.com/go-sql-driver/mysql v1.8.1 // indirect` 同理。
+- **`gorm.io/driver/mysql` 无法从 go.mod 移除，也无法从二进制中消除。** 两条传递依赖链：`gorm.io/gen → gorm.io/driver/mysql`（仅代码生成期），以及 `internal/dal → gorm.io/datatypes → gorm.io/driver/mysql`（编译进二进制，因为 `completed_tours` 用 `datatypes.JSONSlice[string]`）。`go mod tidy` 会把它作为 `// indirect` 重新写回。目标是让它从 `require` 直接块降级为 indirect，而不是消失。实测二进制含 247 个 mysql 符号，属死代码 —— 没有代码路径调用 mysql 方言。`github.com/go-sql-driver/mysql v1.8.1 // indirect` 同理。
 - PostgreSQL 服务端版本：`postgres:16-alpine`（见 Task 2 Step 1 的版本说明）
 - 表名前缀 `sys_` 与单数表名策略（`SingularTable: true`）保持不变
 - 所有主键与外键：Go 侧 `int64`，PG 侧 `BIGINT` / `BIGSERIAL`
@@ -979,15 +979,19 @@ grep -rn -i "mysql\|utf8mb4\|innodb\|3306" \
 
 Expected: 无输出。若有命中，逐个改掉（注释、文档措辞等）。
 
-- [ ] **Step 2: 确认 mysql 未被编译进二进制**
+- [ ] **Step 2: 确认项目自身代码不再 import mysql driver**
 
-上一步只查了源码文本，这一步验证实际依赖图 —— 确认没有任何包 import mysql driver：
+只检查项目自己的包。**不要**用 `go list -deps ./... | grep mysql` 断言"无 mysql" —— 那条断言是错的，见下方说明。
 
 ```bash
-go list -deps ./... | grep -i mysql || echo "✓ 依赖图中无 mysql"
+grep -rn "driver/mysql\|go-sql-driver" --include="*.go" . || echo "✓ 项目代码中无 mysql driver import"
 ```
 
-Expected: `✓ 依赖图中无 mysql`。若有输出，说明还有代码在 import mysql driver，回到 Task 1 Step 7 检查。
+Expected: `✓ 项目代码中无 mysql driver import`
+
+**为什么依赖图里一定还有 mysql（Task 1 执行时实测确认）：** `gorm.io/datatypes` 无条件 `import "gorm.io/driver/mysql"`，而本项目用 `datatypes.JSONSlice[string]` 承载 `completed_tours` 字段，所以链路是 `internal/dal → gorm.io/datatypes → gorm.io/driver/mysql`。实测 `cmd/server` 二进制中有 247 个 mysql 符号（对比 postgres/pgx 6654 个）。
+
+这是死代码：没有任何代码路径会调用 mysql 方言，`gorm.Open` 只接到 `postgres.Open(dsn)`。要彻底消除只能放弃 `gorm.io/datatypes`，改用自定义 `JSONB` 类型手写 `Scan`/`Value` —— 收益仅是二进制小几百 KB，不值得，故不做。
 
 - [ ] **Step 3: 给 CI 加 postgres 服务**
 
@@ -1083,8 +1087,8 @@ Expected: 全部 PASS
 - [ ] `go test ./...` 全绿
 - [ ] `go test ./internal/dal/ -tags=integration` 全绿
 - [ ] `go list -m gorm.io/gorm gorm.io/driver/postgres gorm.io/gen github.com/jackc/pgx/v5` 输出 v1.31.2 / v1.6.0 / v0.3.28 / v5.10.0
-- [ ] `go list -deps ./... | grep -i mysql` 无输出（依赖图中无 mysql）
-- [ ] `go.mod` 中两条 mysql 条目带 `// indirect`（预期状态，非遗漏）
+- [ ] `grep -rn "driver/mysql\|go-sql-driver" --include="*.go" .` 无输出（项目代码不再 import）
+- [ ] `go.mod` 中两条 mysql 条目带 `// indirect`（预期状态，非遗漏；`gorm.io/datatypes` 传递依赖，无法消除）
 - [ ] `grep -ri mysql --include="*.go" .` 无输出
 - [ ] `go run ./cmd/server` 能启动，cron 任务注册成功
 - [ ] 从空库执行 `migrations/0*.sql` 能完整建起 7 张表 + seed
