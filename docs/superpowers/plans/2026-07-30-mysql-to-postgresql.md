@@ -23,8 +23,18 @@
   | `gorm.io/plugin/dbresolver` | v1.6.2（已最新） | v1.6.2 |
 
 - **pgx 必须显式升级。** `go get gorm.io/driver/postgres@latest` 只会拉到 pgx **v5.6.0** —— Go 的最小版本选择（MVS）取驱动声明的下界，而非 pgx 的最新版。要拿到 v5.10.0 必须单独 `go get github.com/jackc/pgx/v5@latest`。
-- **`gorm.io/driver/mysql` 无法从 go.mod 移除，也无法从二进制中消除。** 两条传递依赖链：`gorm.io/gen → gorm.io/driver/mysql`（仅代码生成期），以及 `internal/dal → gorm.io/datatypes → gorm.io/driver/mysql`（编译进二进制，因为 `completed_tours` 用 `datatypes.JSONSlice[string]`）。`go mod tidy` 会把它作为 `// indirect` 重新写回。目标是让它从 `require` 直接块降级为 indirect，而不是消失。实测二进制含 247 个 mysql 符号，属死代码 —— 没有代码路径调用 mysql 方言。`github.com/go-sql-driver/mysql v1.8.1 // indirect` 同理。
-- PostgreSQL 服务端版本：`postgres:16-alpine`（见 Task 2 Step 1 的版本说明）
+- **`gorm.io/driver/mysql` 与 `go-sql-driver/mysql` 无法从 go.mod 移除，也无法从二进制中消除。** 根因是 gorm gen 的 query 模式，与本项目用什么字段类型无关：
+
+  ```
+  internal/dal/query (gen 生成代码) → gorm.io/gen → gorm.io/datatypes → gorm.io/driver/mysql → go-sql-driver/mysql
+  ```
+
+  8 个 `internal/dal/query/*.gen.go` 每个都 `import "gorm.io/gen"`（`gen.DOOption`、`field.*` 是运行时类型，不只生成期需要），而 `gorm.io/gen` 自身 import 了 `gorm.io/datatypes`。这条链恒定存在。
+
+  `go mod tidy` 会把两条 mysql 作为 `// indirect` 重新写回。目标是让它们从 `require` 直接块降级为 indirect，而不是消失。实测 `cmd/server` 二进制含 247 个 mysql 符号（postgres/pgx 6654 个），属死代码 —— `gorm.Open` 只接到 `postgres.Open(dsn)`，无代码路径能激活 mysql 方言。
+
+  **已验证无效的尝试：** 把 `completed_tours` 从 `datatypes.JSONSlice[string]` 换成自定义 JSONB 类型以摆脱 `datatypes`。实测二进制 mysql 符号仅从 247 降到 245，go.mod 两条 indirect 一条未减 —— 因为 `gen` 自己就依赖 `datatypes`。不要做这个改动。彻底消除需放弃 gen 的 query 模式，属架构级变更，超出本次迁移范围。
+- PostgreSQL 服务端版本：`postgres:18-alpine`。Task 2 执行时已核实 —— PostgreSQL 18 是当前最新大版本（18.4，EOL 2030-11-14），来源 postgresql.org 的 versions.rss 与 endoflife.date。计划初稿写的 16 落后两个大版本，已更正。
 - 表名前缀 `sys_` 与单数表名策略（`SingularTable: true`）保持不变
 - 所有主键与外键：Go 侧 `int64`，PG 侧 `BIGINT` / `BIGSERIAL`
 - 软删除：保持 `soft_delete.DeletedAt` + `softDelete:milli`（bigint 存毫秒时间戳），语义不变
@@ -255,19 +265,13 @@ Expected: 全部 PASS（现有 15 个测试文件都不连数据库，不受影�
 
 **Interfaces:**
 - Consumes: Task 1 的 `configs/default.yaml`（port 5432、user postgres、dbname gapi）
-- Produces: 本机 `127.0.0.1:5432` 上的 PostgreSQL 16，库名 `gapi`，用户 `postgres`，密码 `password`
+- Produces: 本机 `127.0.0.1:5432` 上的 PostgreSQL 18，库名 `gapi`，用户 `postgres`，密码 `password`
 
 - [ ] **Step 1: 替换 mysql 服务定义**
 
-**关于镜像版本：** 下面用 `postgres:16-alpine`。写计划时本机无法访问 Docker Hub，因此没有核实 PostgreSQL 服务端的当前最新大版本（17 和 18 可能已发布）。执行到这一步时先确认一次：
+**镜像版本已核实（Task 2 执行时确认）：** 用 `postgres:18-alpine`。PostgreSQL 18 是当前最新大版本（18.4，EOL 2030-11-14；17.10 与 16.14 分别是 17/16 系列的最新补丁）。因为是开发阶段全新建库、无存量数据，直接上 18 而非从落后两个大版本的 16 起步。
 
-```bash
-docker run --rm postgres:18-alpine postgres --version 2>/dev/null \
-  || docker run --rm postgres:17-alpine postgres --version 2>/dev/null \
-  || docker run --rm postgres:16-alpine postgres --version
-```
-
-取能拉到的最高版本，把下面 yaml 里的 tag 与 Global Constraints 的版本记录一并改掉。本计划的 DDL 只用了 `BIGSERIAL`、`JSONB`、`TIMESTAMPTZ`、`COMMENT ON`、`CROSS JOIN`、`ON CONFLICT` 这些特性，PG 12 起就全部支持，**任何 ≥16 的版本都不需要改 SQL**。
+本计划的 DDL 只用了 `BIGSERIAL`、`JSONB`、`TIMESTAMPTZ`、`COMMENT ON`、`CROSS JOIN`、`ON CONFLICT`，PG 12 起全部支持，所以换任何 ≥12 的版本都不需要改 SQL。
 
 把 `deploy/docker/docker-compose.yaml` 开头的 `mysql:` 服务块（第 2-16 行，到 `command:` 行结束）整段替换为下面内容。`redis`、`etcd` 两个服务与 `volumes:` 段保持不动：
 
@@ -316,9 +320,19 @@ Expected: 状态显示 `healthy`
 - [ ] **Step 4: 确认能连上且库存在**
 
 Run: `docker exec gapi-postgres psql -U postgres -d gapi -c "SELECT version();"`
-Expected: 输出 `PostgreSQL 16.x ... ` 一行
+Expected: 输出 `PostgreSQL 18.x ... ` 一行
 
-**Task 2 完成。** 变更文件：`deploy/docker/docker-compose.yaml`。交由用户手动提交，不要执行任何 git 命令。
+**Task 2 文件改动完成，Step 3-4 未验证。** 变更文件：`deploy/docker/docker-compose.yaml`。交由用户手动提交，不要执行任何 git 命令。
+
+> ⚠ **本机无容器运行时**（`docker`、`podman`、`colima`、`nerdctl` 均不存在，也没有本地 PostgreSQL 或 `psql`），因此 Step 3「启动并确认健康」与 Step 4「确认能连上」**未执行**。yaml 已通过语法与结构校验（服务名、端口、volume、healthcheck、环境变量、mysql 残留均已核对），但"能否真正拉起并连上"尚未证实。
+>
+> **Task 3 起的每一步都依赖一个可连接的 PG 实例** —— migrations 要执行、gen 要反向读库、集成测试要连库。继续之前需要先在你的环境里补上运行时，二选一：
+>
+> - 装 Docker Desktop / OrbStack，然后回到 Step 3 执行；
+> - 或 `brew install postgresql@18 && brew services start postgresql@18`，再手工建库：
+>   `createdb gapi`（此路径下 compose 文件仅作部署参考，本地不经容器）。
+>
+> 补齐后请回到 Step 3-4 补验，再进入 Task 3。
 
 ---
 
@@ -675,6 +689,7 @@ done
 **Files:**
 - Modify: `cmd/gen/main.go:20-29`
 - Modify: `internal/dal/model/*.gen.go`、`internal/dal/query/*.gen.go`（由工具生成，不手改）
+- Modify: `internal/dal/model/permission_resource_type.go:12-34`（`Scan` 补 `int16`/`int32` 分支）
 - Modify: `internal/dal/{user,permission,cron_job,token}.go`
 - Modify: `internal/service/{auth,user,cron_job}.go`
 - Modify: `internal/handler/v1/{auth,user}.go`、`internal/handler/v1/resp/cron_job.go`
@@ -682,6 +697,33 @@ done
 - Modify: `internal/cronjob/manager.go:20-21`
 - Modify: `pkg/jwt/jwt.go:19,45,69`
 - Test: `pkg/jwt/jwt_test.go:20,40`、`internal/cronjob/manager_test.go:36,39`
+
+**gen 对 PostgreSQL 的支持机制（已静态追查 gen v0.3.28 + pgx v5.10.0 源码确认）：**
+
+gen 内部**没有任何 mysql/postgres 硬编码分支**，完全走 GORM 的 `Migrator()` 接口。类型推断的优先级在 `internal/model/tbl_column.go:29-37`：
+
+1. `dataTypeMap` —— `gen.FieldType(...)` 写入的显式覆盖，**优先级最高**
+2. `ScanType()` —— 当 `UseScanType == true` 时由驱动决定
+3. `dataType.Get()` —— gen 内置的兜底映射表
+
+`internal/generate/table.go:80` 有一行关键逻辑：`UseScanType: t.Dialector.Name() != "mysql" && t.Dialector.Name() != "sqlite"`。postgres 走第 2 条，即类型由 pgx 决定，**绕过 gen 内置的那张 MySQL 口味映射表**（那张表里没有 `int8`/`timestamptz`/`bool`/`jsonb`，若真走它会全部 fallback 成 `string`）。
+
+pgx 的 `stdlib/sql.go:697` `ColumnTypeScanType` 实际映射（PG 上报的是 `udt_name`，即内部类型名，不是 DDL 里写的名字）：
+
+| DDL 写法 | udt_name | 生成的 Go 类型 |
+|---|---|---|
+| `BIGSERIAL` / `BIGINT` | `int8` | `int64` ✓ |
+| `INT` | `int4` | `int32` |
+| `SMALLINT` | `int2` | `int16` |
+| `BOOLEAN` | `bool` | `bool` ✓ |
+| `TIMESTAMPTZ` | `timestamptz` | `time.Time` ✓ |
+| `JSONB` | `jsonb` | `string` ⚠ 落入 default 分支 |
+
+两点由此而来：
+
+- **主键会正确生成为 `int64`** —— 本任务的前提成立。
+- **`resource_type` 会变成 `int16`，不再是 `int32`。** MySQL 的 `TINYINT` 经 gen 内置表得到 `int32`；PG 的 `SMALLINT`（`int2`）经 pgx 得到 `int16`。但 `cmd/gen/main.go:55` 有 `gen.FieldType("resource_type", "ResourceType")` 显式覆盖，优先级最高，所以最终仍是 `model.ResourceType`，不受影响。`ResourceType` 底层是 `int`，其 `Scan` 已处理 `int64`/`int`/`string`/`[]byte` —— 但 **pgx 会以 `int16` 递送 SMALLINT**，需要在 Step 6 补一个 case，否则运行时报 `cannot scan int16 into ResourceType`。
+- **`completed_tours` 若无覆盖会退化成 `string`** —— 因为 pgx 对 `jsonb` 落 default 分支。`cmd/gen/main.go:70` 的 `gen.FieldType("completed_tours", "datatypes.JSONSlice[string]")` 正好挡住了这一点，必须保留。
 
 **Interfaces:**
 - Consumes: Task 4 建好的 7 张 PG 表
@@ -723,16 +765,64 @@ Expected: `internal/dal/model/` 与 `internal/dal/query/` 下 14 个 `.gen.go` �
 ```bash
 grep -n "ID " internal/dal/model/sys_user.gen.go | head -3
 grep -rn "CompletedTours\|Enabled " internal/dal/model/sys_user.gen.go
+grep -n "ResourceType" internal/dal/model/sys_permission.gen.go
 ```
 
-Expected: `ID int64`，gorm tag 里 `type:bigint`；`CompletedTours datatypes.JSONSlice[string]` 且 `type:jsonb`；`Enabled bool`
+Expected: `ID int64`，gorm tag 里 `type:bigint`；`CompletedTours datatypes.JSONSlice[string]` 且 `type:jsonb`；`Enabled bool`；`ResourceType ResourceType`（被 `gen.FieldType` 覆盖，不是 `int16`）。
 
-- [ ] **Step 4: 确认编译失败，看到全部待改点**
+若 `CompletedTours` 生成成了 `string`，说明 `cmd/gen/main.go:70` 的 `FieldType` 覆盖丢了 —— pgx 对 `jsonb` 会落到 default 分支返回 `string`，必须靠那行覆盖挡住。
+
+- [ ] **Step 4: 给 ResourceType.Scan 补 int16 分支**
+
+PG 的 `SMALLINT`（udt_name `int2`）经 pgx 以 **`int16`** 递送，而 `ResourceType.Scan` 当前只处理 `int64`/`int`/`string`/`[]byte`，会在运行时报 `cannot scan int16 into ResourceType`。MySQL 的 `TINYINT` 走的是 `int64`，所以这个问题只在 PG 下出现。
+
+在 `internal/dal/model/permission_resource_type.go` 的 `Scan` 中，把 `case int64:` 那一组扩成同时接受 `int16` 与 `int32`：
+
+```go
+func (i *ResourceType) Scan(src any) error {
+	switch v := src.(type) {
+	case int64:
+		*i = ResourceType(v)
+	case int32:
+		*i = ResourceType(v)
+	case int16:
+		*i = ResourceType(v)
+	case int:
+		*i = ResourceType(v)
+	case string:
+		n, err := strconv.Atoi(v)
+		if err != nil {
+			return fmt.Errorf("cannot scan %T (%v) into ResourceType", src, src)
+		}
+		*i = ResourceType(n)
+	case []byte:
+		n, err := strconv.Atoi(string(v))
+		if err != nil {
+			return fmt.Errorf("cannot scan %T (%v) into ResourceType", src, src)
+		}
+		*i = ResourceType(n)
+	default:
+		return fmt.Errorf("cannot scan %T into ResourceType", src)
+	}
+	return nil
+}
+```
+
+`Value()` 返回 `int64(i)` 不用改 —— PG 接受 int64 写入 SMALLINT 列（超范围会报错，而 ResourceType 取值只有 1-5）。
+
+其余三个枚举（`PermissionAction`、`PermissionEffect`、`TriggeredBy`）底层是 `string`，对应 `VARCHAR`，pgx 递送 `string`，已有的 `string`/`[]byte` 两个 case 足够，**不需要改**。
+
+- [ ] **Step 5: 确认 int16 分支编译通过**
+
+Run: `go build ./internal/dal/model/`
+Expected: 编译通过
+
+- [ ] **Step 6: 确认编译失败，看到全部待改点**
 
 Run: `go build ./... 2>&1 | head -40`
 Expected: 大量 `cannot use ... (variable of type uint64) as int64 value` 类型错误，集中在 dal / service / handler / middleware
 
-- [ ] **Step 5: 批量替换业务代码里的 uint64**
+- [ ] **Step 7: 批量替换业务代码里的 uint64**
 
 这些文件里 `uint64` 全部表示实体 ID，可安全整体替换。`pkg/etcd/balancer.go:25` 的 `uint64(len(instances))` 是哈希取模，与数据库无关，**不要改**：
 
@@ -758,22 +848,22 @@ do
 done
 ```
 
-- [ ] **Step 6: 确认 etcd 的 uint64 未被误改**
+- [ ] **Step 8: 确认 etcd 的 uint64 未被误改**
 
 Run: `grep -n "uint64" pkg/etcd/balancer.go`
 Expected: 第 25 行 `return instances[idx%uint64(len(instances))], nil` 仍在（这是哈希取模，与 DB 无关）
 
-- [ ] **Step 7: 编译**
+- [ ] **Step 9: 编译**
 
 Run: `go build ./...`
 Expected: 编译通过。若仍报错，按提示逐个修正剩余 `uint64`（注意 `resp/cron_job.go` 的两处 `ID` 是 API 响应字段）
 
-- [ ] **Step 8: 跑全量测试**
+- [ ] **Step 10: 跑全量测试**
 
 Run: `go test ./...`
-Expected: 全部 PASS。`pkg/jwt/jwt_test.go` 的 `assert.Equal(t, int64(1), claims.UserID)` 与 `internal/cronjob/manager_test.go` 的 mock 签名都已被 Step 5 同步改掉
+Expected: 全部 PASS。`pkg/jwt/jwt_test.go` 的 `assert.Equal(t, int64(1), claims.UserID)` 与 `internal/cronjob/manager_test.go` 的 mock 签名都已被 Step 7 同步改掉
 
-**Task 5 完成。** 变更文件：`cmd/gen/main.go`、`internal/dal/model/*.gen.go` 与 `internal/dal/query/*.gen.go`（14 个生成文件）、`internal/dal/{user,permission,cron_job,token}.go`、`internal/service/{auth,user,cron_job}.go`、`internal/handler/v1/{auth,user}.go`、`internal/handler/v1/resp/cron_job.go`、`internal/middleware/auth.go`、`internal/cronjob/{manager,manager_test}.go`、`pkg/jwt/{jwt,jwt_test}.go`。交由用户手动提交，不要执行任何 git 命令。
+**Task 5 完成。** 变更文件：`cmd/gen/main.go`、`internal/dal/model/*.gen.go` 与 `internal/dal/query/*.gen.go`（14 个生成文件）、`internal/dal/model/permission_resource_type.go`、`internal/dal/{user,permission,cron_job,token}.go`、`internal/service/{auth,user,cron_job}.go`、`internal/handler/v1/{auth,user}.go`、`internal/handler/v1/resp/cron_job.go`、`internal/middleware/auth.go`、`internal/cronjob/{manager,manager_test}.go`、`pkg/jwt/{jwt,jwt_test}.go`。交由用户手动提交，不要执行任何 git 命令。
 
 这个任务的改动面最大且必须整体生效 —— 生成代码与手写代码的类型不一致时无法编译，所以提交时这批文件应作为一个整体。
 
@@ -791,6 +881,8 @@ Expected: 全部 PASS。`pkg/jwt/jwt_test.go` 的 `assert.Equal(t, int64(1), cla
 - Produces: 一个可重复运行的集成测试，`go test ./internal/dal/ -tags=integration`
 
 **背景：** 项目现有 15 个测试文件都不连数据库（`internal/dal/captcha_test.go` 用的是 miniredis），DAL 层没有任何集成测试覆盖。这个任务补上最小验证，不追求完整覆盖。
+
+除三个高风险点外，还要覆盖 Task 5 Step 4 改的 `ResourceType.Scan` —— `SMALLINT` 经 pgx 递送为 `int16`，这条路径只有真连 PG 才能验证。
 
 - [ ] **Step 1: 写集成测试**
 
@@ -928,12 +1020,48 @@ func TestSoftDeleteAllowsReinsert(t *testing.T) {
 	ur2 := &model.UserRole{UserID: u.ID, RoleID: roleID, CreatedAt: time.Now(), UpdatedAt: time.Now()}
 	assert.NoError(t, q.UserRole.WithContext(ctx).Create(ur2), "软删除后应允许重新插入")
 }
+
+// resource_type 是 SMALLINT，pgx 以 int16 递送 —— 验证 ResourceType.Scan
+// 的 int16 分支（Task 5 Step 4 新增）。MySQL 下走的是 int64，故此路径 PG 独有。
+func TestResourceTypeScanFromSmallint(t *testing.T) {
+	db := testDB(t)
+	ctx := context.Background()
+	q := query.Use(db)
+
+	// seed 数据里有 resource_type=2 (frontend-menu) 的权限
+	perms, err := q.Permission.WithContext(ctx).
+		Where(q.Permission.ResourceType.Eq(model.ResourceTypeFrontendMenu)).
+		Limit(1).Find()
+	require.NoError(t, err, "SMALLINT -> ResourceType 扫描失败，检查 Scan 的 int16 分支")
+	require.NotEmpty(t, perms, "seed 数据缺失，先执行 migrations/003")
+	assert.Equal(t, model.ResourceTypeFrontendMenu, perms[0].ResourceType)
+
+	// 同时验证 PermissionAction / PermissionEffect（VARCHAR -> string）
+	assert.NotEmpty(t, perms[0].Code)
+
+	codes, err := d(db).FindCodesByRoleIDsAndResourceType(ctx,
+		roleIDsOf(t, db, "admin"), model.ResourceTypeFrontendMenu)
+	require.NoError(t, err)
+	assert.NotEmpty(t, codes, "admin 应有 menu 权限")
+}
+
+func d(db *gorm.DB) *PermissionDal {
+	return &PermissionDal{DB: db}
+}
+
+func roleIDsOf(t *testing.T, db *gorm.DB, code string) []int64 {
+	t.Helper()
+	var ids []int64
+	require.NoError(t, db.Raw("SELECT id FROM sys_role WHERE code = ?", code).Scan(&ids).Error)
+	require.NotEmpty(t, ids, "角色 %s 不存在", code)
+	return ids
+}
 ```
 
 - [ ] **Step 2: 运行集成测试**
 
-Run: `go test ./internal/dal/ -tags=integration -v -run 'TestUpsertJobOnConflict|TestCompletedToursJSONB|TestSoftDeleteAllowsReinsert'`
-Expected: 3 个测试全部 PASS
+Run: `go test ./internal/dal/ -tags=integration -v -run 'TestUpsertJobOnConflict|TestCompletedToursJSONB|TestSoftDeleteAllowsReinsert|TestResourceTypeScanFromSmallint'`
+Expected: 4 个测试全部 PASS
 
 如果 `TestUpsertJobOnConflict` 报 `there is no unique or exclusion constraint matching the ON CONFLICT specification`，说明 `sys_cron_job` 的 `idx_name` 唯一索引没建上，回到 Task 3 检查。
 
@@ -989,9 +1117,7 @@ grep -rn "driver/mysql\|go-sql-driver" --include="*.go" . || echo "✓ 项目代
 
 Expected: `✓ 项目代码中无 mysql driver import`
 
-**为什么依赖图里一定还有 mysql（Task 1 执行时实测确认）：** `gorm.io/datatypes` 无条件 `import "gorm.io/driver/mysql"`，而本项目用 `datatypes.JSONSlice[string]` 承载 `completed_tours` 字段，所以链路是 `internal/dal → gorm.io/datatypes → gorm.io/driver/mysql`。实测 `cmd/server` 二进制中有 247 个 mysql 符号（对比 postgres/pgx 6654 个）。
-
-这是死代码：没有任何代码路径会调用 mysql 方言，`gorm.Open` 只接到 `postgres.Open(dsn)`。要彻底消除只能放弃 `gorm.io/datatypes`，改用自定义 `JSONB` 类型手写 `Scan`/`Value` —— 收益仅是二进制小几百 KB，不值得，故不做。
+**为什么依赖图里一定还有 mysql（Task 1 执行时实测确认）：** 见 Global Constraints 中的完整链条 —— 根因是 `internal/dal/query/*.gen.go` import `gorm.io/gen`，而 gen 自身依赖 `datatypes` → `driver/mysql`。这是 gorm gen query 模式的固有结果，无法在本次迁移范围内消除，也不影响正确性。
 
 - [ ] **Step 3: 给 CI 加 postgres 服务**
 
@@ -1004,8 +1130,8 @@ jobs:
 
     services:
       postgres:
-        # 保持与 deploy/docker/docker-compose.yaml 中的 tag 一致（见 Task 2 Step 1）
-        image: postgres:16-alpine
+        # 保持与 deploy/docker/docker-compose.yaml 中的 tag 一致
+        image: postgres:18-alpine
         env:
           POSTGRES_PASSWORD: password
           POSTGRES_USER: postgres

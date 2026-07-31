@@ -1,17 +1,23 @@
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: gapi-mysql
+  postgres:
+    image: postgres:18-alpine
+    container_name: gapi-postgres
     restart: unless-stopped
     ports:
-      - "3306:3306"
+      - "5432:5432"
     environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: gapi
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: postgres
+      POSTGRES_DB: gapi
       TZ: Asia/Shanghai
+      PGTZ: Asia/Shanghai
     volumes:
-      - mysql_data:/var/lib/mysql
-    command: --default-authentication-plugin=caching_sha2_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d gapi"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   redis:
     image: redis:7-alpine
@@ -43,6 +49,6 @@ services:
       - etcd_data:/etcd-data
 
 volumes:
-  mysql_data:
+  postgres_data:
   redis_data:
   etcd_data:
