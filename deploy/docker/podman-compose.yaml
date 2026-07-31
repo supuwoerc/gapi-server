@@ -67,6 +67,26 @@ services:
       timeout: 5s
       retries: 10
 
+  # etcd 的可视化管理界面, 仅本地开发使用。
+  # 带 profiles 的 service 默认不启动, 需显式启用:
+  #   podman compose -f deploy/docker/podman-compose.yaml --profile tools up -d
+  # 注意: profiles 的支持取决于 podman-compose 版本, 若该版本忽略它导致
+  # 默认就被拉起, 改用 `podman compose ... up -d postgres redis etcd` 显式列举服务。
+  etcd-workbench:
+    # Podman 要求完全限定的镜像名
+    image: docker.io/tzfun/etcd-workbench:latest
+    container_name: gapi-etcd-workbench
+    restart: unless-stopped
+    profiles: ["tools"]
+    ports:
+      # 端口未经验证(拉取镜像时 docker hub 不可达), 若打不开先查
+      # podman logs gapi-etcd-workbench 里实际监听的端口再改这里
+      - "8002:8002"
+    environment:
+      TZ: Asia/Shanghai
+    depends_on:
+      - etcd
+
 volumes:
   postgres_data:
   redis_data:
