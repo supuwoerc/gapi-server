@@ -27,11 +27,17 @@ INSERT INTO sys_permission (code, name, resource_type, module, resource_path, ac
 -- 给 admin 角色分配全部前端权限 (menu + route)
 INSERT INTO sys_role_permission (role_id, permission_id, effect, created_at, updated_at, deleted_at)
 SELECT r.id, p.id, 'allow', NOW(), NOW(), 0
-FROM sys_role r, sys_permission p
-WHERE r.code = 'admin' AND p.resource_type IN (2, 3);
+FROM sys_role r
+         CROSS JOIN sys_permission p
+WHERE r.code = 'admin'
+  AND p.resource_type IN (2, 3);
 
 -- 给 user 角色分配基础前端权限（不含管理后台）
 INSERT INTO sys_role_permission (role_id, permission_id, effect, created_at, updated_at, deleted_at)
 SELECT r.id, p.id, 'allow', NOW(), NOW(), 0
-FROM sys_role r, sys_permission p
-WHERE r.code = 'user' AND p.resource_type IN (2, 3) AND p.code NOT LIKE 'admin%' AND p.code NOT LIKE 'route:admin%';
+FROM sys_role r
+         CROSS JOIN sys_permission p
+WHERE r.code = 'user'
+  AND p.resource_type IN (2, 3)
+  AND p.code NOT LIKE 'admin%'
+  AND p.code NOT LIKE 'route:admin%';

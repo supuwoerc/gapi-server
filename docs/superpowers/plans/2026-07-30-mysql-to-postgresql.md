@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 将 gapi-server 的持久层从 MySQL 8.0 彻底切换到 PostgreSQL 16，不保留 MySQL 兼容路径。
+**Goal:** 将 gapi-server 的持久层从 MySQL 8.0 彻底切换到 PostgreSQL 18，不保留 MySQL 兼容路径。
 
 **Architecture:** 项目的数据库耦合极浅 —— 业务层 12k 行 Go 代码中没有任何原生 SQL，全部通过 GORM + gorm.io/gen 生成的类型安全查询访问数据库。真正的 MySQL 绑定只在 `pkg/database/database.go` 的 driver 导入和 DSN 拼接两处。因此迁移的重心不在应用代码，而在 (1) 重写 `migrations/` 下的 DDL，(2) 处理 PostgreSQL 没有 unsigned 整型所引发的 `uint64` → `int64` 连锁改动。因为 gen 通过 `g.UseDB()` 从活库反向生成模型，schema 一改，7 张表的 14 个 `*.gen.go` 会重新生成为 `int64`，进而波及 76 处业务引用。
 
-**Tech Stack:** Go 1.26.1, GORM 1.31.2, gorm.io/driver/postgres 1.6.0, gorm.io/gen 0.3.28, jackc/pgx v5.10.0, PostgreSQL 16+, Docker Compose, google/wire, testify
+**Tech Stack:** Go 1.26.1, GORM 1.31.2, gorm.io/driver/postgres 1.6.0, gorm.io/gen 0.3.28, jackc/pgx v5.10.0, PostgreSQL 18, Docker Compose, google/wire, testify
 
 ## Global Constraints
 
@@ -277,7 +277,7 @@ Expected: 全部 PASS（现有 15 个测试文件都不连数据库，不受影�
 
 ```yaml
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     container_name: gapi-postgres
     restart: unless-stopped
     ports:
@@ -289,7 +289,9 @@ Expected: 全部 PASS（现有 15 个测试文件都不连数据库，不受影�
       TZ: Asia/Shanghai
       PGTZ: Asia/Shanghai
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # PG 18+ 的 PGDATA 为 /var/lib/postgresql/18/docker, 镜像声明的卷是
+      # /var/lib/postgresql. 挂到 .../data 会被识别为 "unused mount" 并直接报错.
+      - postgres_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d gapi"]
       interval: 5s
@@ -645,7 +647,9 @@ docker exec gapi-postgres psql -U postgres -d gapi -c \
   "SELECT r.code, count(*) FROM sys_role_permission rp JOIN sys_role r ON r.id = rp.role_id GROUP BY r.code ORDER BY r.code;"
 ```
 
-Expected: `admin` 20 条（10 menu + 10 route），`user` 14 条（排除 3 个 admin menu 与 3 个 admin route，即 20 - 6）
+Expected: `admin` 20 条（10 menu + 10 route），`user` 12 条（排除 4 个 admin menu 与 4 个 admin route，即 20 - 8）
+
+> 计划初稿写的 14（按排除 3+3 算）是错的。`admin%` 实际匹配 4 个 menu（`admin`、`admin:users`、`admin:roles`、`admin:permissions`），`route:admin%` 同样匹配 4 个 route，共排除 8 条。Task 4 执行时实测确认为 12。
 
 - [ ] **Step 7: 写 migrations 执行说明**
 
@@ -654,7 +658,7 @@ Expected: `admin` 20 条（10 menu + 10 route），`user` 14 条（排除 3 个 
 ````markdown
 # Migrations
 
-目标数据库：PostgreSQL 16。当前没有自动化 migration runner，按序号手工执行。
+目标数据库：PostgreSQL 18。当前没有自动化 migration runner，按序号手工执行。
 
 ## 首次初始化
 
@@ -668,6 +672,8 @@ done
 
 `003_seed_frontend_permissions.sql` 依赖 `sys_role` 中已存在 `admin` 与 `user`
 两个角色，否则两条 `INSERT ... SELECT` 会静默插入 0 行。
+
+脚本不幂等，仅用于空库首次初始化；重复执行会在 `CREATE TABLE` 处报错中断。
 
 ## 约定
 
