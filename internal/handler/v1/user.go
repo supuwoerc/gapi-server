@@ -14,11 +14,11 @@ import (
 )
 
 type UserServiceInterface interface {
-	GetProfile(ctx context.Context, userID uint64) (*model.User, error)
-	GetMenuPermissions(ctx context.Context, roleIDs []uint64) ([]string, error)
-	GetRoutePermissions(ctx context.Context, roleIDs []uint64) ([]string, error)
-	UpdateProfile(ctx context.Context, userID uint64, name, bio, avatar string) (*model.User, error)
-	UpdateCompletedTours(ctx context.Context, userID uint64, tours []string) ([]string, error)
+	GetProfile(ctx context.Context, userID int64) (*model.User, error)
+	GetMenuPermissions(ctx context.Context, roleIDs []int64) ([]string, error)
+	GetRoutePermissions(ctx context.Context, roleIDs []int64) ([]string, error)
+	UpdateProfile(ctx context.Context, userID int64, name, bio, avatar string) (*model.User, error)
+	UpdateCompletedTours(ctx context.Context, userID int64, tours []string) ([]string, error)
 }
 
 type UserHandler struct {
@@ -56,7 +56,7 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 		response.FailWithError(c, err)
 		return
 	}
-	roleIDs := make([]uint64, 0, len(user.Roles))
+	roleIDs := make([]int64, 0, len(user.Roles))
 	roles := make([]string, 0, len(user.Roles))
 	for _, r := range user.Roles {
 		roleIDs = append(roleIDs, r.ID)

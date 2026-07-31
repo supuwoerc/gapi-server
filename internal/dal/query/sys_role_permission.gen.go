@@ -28,9 +28,9 @@ func newRolePermission(db *gorm.DB, opts ...gen.DOOption) rolePermission {
 
 	tableName := _rolePermission.rolePermissionDo.TableName()
 	_rolePermission.ALL = field.NewAsterisk(tableName)
-	_rolePermission.ID = field.NewUint64(tableName, "id")
-	_rolePermission.RoleID = field.NewUint64(tableName, "role_id")
-	_rolePermission.PermissionID = field.NewUint64(tableName, "permission_id")
+	_rolePermission.ID = field.NewInt64(tableName, "id")
+	_rolePermission.RoleID = field.NewInt64(tableName, "role_id")
+	_rolePermission.PermissionID = field.NewInt64(tableName, "permission_id")
 	_rolePermission.Effect = field.NewField(tableName, "effect")
 	_rolePermission.CreatedAt = field.NewTime(tableName, "created_at")
 	_rolePermission.UpdatedAt = field.NewTime(tableName, "updated_at")
@@ -41,15 +41,14 @@ func newRolePermission(db *gorm.DB, opts ...gen.DOOption) rolePermission {
 	return _rolePermission
 }
 
-// rolePermission 角色权限关联表
 type rolePermission struct {
 	rolePermissionDo rolePermissionDo
 
 	ALL          field.Asterisk
-	ID           field.Uint64
-	RoleID       field.Uint64 // 角色ID
-	PermissionID field.Uint64 // 权限ID
-	Effect       field.Field  // 效果 allow/deny
+	ID           field.Int64
+	RoleID       field.Int64 // 角色ID
+	PermissionID field.Int64 // 权限ID
+	Effect       field.Field // 效果 allow/deny
 	CreatedAt    field.Time
 	UpdatedAt    field.Time
 	DeletedAt    field.Field
@@ -69,9 +68,9 @@ func (r rolePermission) As(alias string) *rolePermission {
 
 func (r *rolePermission) updateTableName(table string) *rolePermission {
 	r.ALL = field.NewAsterisk(table)
-	r.ID = field.NewUint64(table, "id")
-	r.RoleID = field.NewUint64(table, "role_id")
-	r.PermissionID = field.NewUint64(table, "permission_id")
+	r.ID = field.NewInt64(table, "id")
+	r.RoleID = field.NewInt64(table, "role_id")
+	r.PermissionID = field.NewInt64(table, "permission_id")
 	r.Effect = field.NewField(table, "effect")
 	r.CreatedAt = field.NewTime(table, "created_at")
 	r.UpdatedAt = field.NewTime(table, "updated_at")

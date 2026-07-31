@@ -21,7 +21,6 @@ func main() {
 		OutPath:           filepath.Join(root, "internal/dal/query"),
 		ModelPkgPath:      filepath.Join(root, "internal/dal/model"),
 		Mode:              gen.WithQueryInterface,
-		FieldSignable:     true,
 		FieldNullable:     true,
 		FieldCoverable:    false,
 		FieldWithIndexTag: true,

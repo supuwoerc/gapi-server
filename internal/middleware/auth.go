@@ -17,12 +17,12 @@ const (
 	contextUsername = "middleware.auth.username"
 )
 
-func CurrentUserID(c *gin.Context) (uint64, bool) {
+func CurrentUserID(c *gin.Context) (int64, bool) {
 	v, exists := c.Get(contextUserID)
 	if !exists {
 		return 0, false
 	}
-	id, ok := v.(uint64)
+	id, ok := v.(int64)
 	return id, ok
 }
 

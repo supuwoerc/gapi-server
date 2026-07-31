@@ -18,10 +18,10 @@ type AuthServiceInterface interface {
 	Register(ctx context.Context, username, email, password string) error
 	Login(ctx context.Context, email, password string) (*jwt.TokenPair, *model.User, error)
 	RefreshToken(ctx context.Context, refreshToken string) (*jwt.TokenPair, error)
-	Logout(ctx context.Context, userID uint64)
-	GetPermissionsForRoles(ctx context.Context, roleIDs []uint64) ([]string, []string, error)
-	GetModulePermissions(ctx context.Context, roleIDs []uint64, module string) ([]string, error)
-	GetUserWithRoles(ctx context.Context, userID uint64) (*model.User, error)
+	Logout(ctx context.Context, userID int64)
+	GetPermissionsForRoles(ctx context.Context, roleIDs []int64) ([]string, []string, error)
+	GetModulePermissions(ctx context.Context, roleIDs []int64, module string) ([]string, error)
+	GetUserWithRoles(ctx context.Context, userID int64) (*model.User, error)
 	VerifyEmail(ctx context.Context, email, code string) error
 	ResendVerifyCode(ctx context.Context, email string) error
 }
@@ -98,7 +98,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		response.FailWithError(c, err)
 		return
 	}
-	roleIDs := make([]uint64, 0, len(user.Roles))
+	roleIDs := make([]int64, 0, len(user.Roles))
 	roles := make([]string, 0, len(user.Roles))
 	for _, role := range user.Roles {
 		roleIDs = append(roleIDs, role.ID)
@@ -195,7 +195,7 @@ func (h *AuthHandler) GetPermissions(c *gin.Context) {
 		response.FailWithError(c, err)
 		return
 	}
-	roleIDs := make([]uint64, 0, len(user.Roles))
+	roleIDs := make([]int64, 0, len(user.Roles))
 	for _, r := range user.Roles {
 		roleIDs = append(roleIDs, r.ID)
 	}

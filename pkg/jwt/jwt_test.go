@@ -17,7 +17,7 @@ func TestGenerateAndParseAccessToken(t *testing.T) {
 
 	claims, err := m.ParseAccessToken(pair.AccessToken)
 	require.NoError(t, err)
-	assert.Equal(t, uint64(1), claims.UserID)
+	assert.Equal(t, int64(1), claims.UserID)
 	assert.Equal(t, "testuser", claims.Username)
 }
 
@@ -37,7 +37,7 @@ func TestParseRefreshToken(t *testing.T) {
 
 	claims, err := m.ParseRefreshToken(pair.RefreshToken)
 	require.NoError(t, err)
-	assert.Equal(t, uint64(1), claims.UserID)
+	assert.Equal(t, int64(1), claims.UserID)
 }
 
 func TestInvalidSecret(t *testing.T) {

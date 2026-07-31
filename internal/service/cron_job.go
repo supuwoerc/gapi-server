@@ -20,7 +20,7 @@ type CronJobRepository interface {
 	UpdateEnabled(ctx context.Context, name string, enabled bool) error
 	UpdateLastRun(ctx context.Context, name string, status string) error
 	CreateExecution(ctx context.Context, exec *model.CronJobExecution) error
-	FinishExecution(ctx context.Context, id uint64, status string, endedAt time.Time, errMsg string) error
+	FinishExecution(ctx context.Context, id int64, status string, endedAt time.Time, errMsg string) error
 	ListExecutions(ctx context.Context, jobName string, page, pageSize int) ([]*model.CronJobExecution, int64, error)
 }
 
@@ -63,7 +63,7 @@ func (s *CronJobService) SetEnabled(ctx context.Context, name string, enabled bo
 	return nil
 }
 
-func (s *CronJobService) RecordStart(ctx context.Context, jobName string, triggeredBy model.TriggeredBy) (uint64, error) {
+func (s *CronJobService) RecordStart(ctx context.Context, jobName string, triggeredBy model.TriggeredBy) (int64, error) {
 	exec := &model.CronJobExecution{
 		JobName:     jobName,
 		Status:      cronjob.StatusRunning,
@@ -77,13 +77,13 @@ func (s *CronJobService) RecordStart(ctx context.Context, jobName string, trigge
 	return exec.ID, nil
 }
 
-func (s *CronJobService) RecordEnd(ctx context.Context, executionID uint64, status string, jobErr error) error {
+func (s *CronJobService) RecordEnd(ctx context.Context, executionID int64, status string, jobErr error) error {
 	errMsg := ""
 	if jobErr != nil {
 		errMsg = jobErr.Error()
 	}
 	if err := s.Repo.FinishExecution(ctx, executionID, status, time.Now(), errMsg); err != nil {
-		s.Logger.Ctx(ctx).Error("failed to record execution end", zap.Uint64("executionID", executionID), zap.Error(err))
+		s.Logger.Ctx(ctx).Error("failed to record execution end", zap.Int64("executionID", executionID), zap.Error(err))
 		return err
 	}
 	return nil

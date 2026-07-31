@@ -12,15 +12,15 @@ import (
 
 const TableNameRolePermission = "sys_role_permission"
 
-// RolePermission 角色权限关联表
+// RolePermission mapped from table <sys_role_permission>
 type RolePermission struct {
-	ID           uint64                `gorm:"column:id;type:bigint unsigned;primaryKey;autoIncrement:true" json:"id"`
-	RoleID       uint64                `gorm:"column:role_id;type:bigint unsigned;not null;uniqueIndex:uk_role_perm,priority:1;comment:角色ID" json:"role_id"`                                                // 角色ID
-	PermissionID uint64                `gorm:"column:permission_id;type:bigint unsigned;not null;uniqueIndex:uk_role_perm,priority:2;index:idx_permission_id,priority:1;comment:权限ID" json:"permission_id"` // 权限ID
-	Effect       PermissionEffect      `gorm:"column:effect;type:varchar(8);not null;default:allow;comment:效果 allow/deny" json:"effect"`                                                                    // 效果 allow/deny
-	CreatedAt    time.Time             `gorm:"column:created_at;type:datetime;not null" json:"created_at"`
-	UpdatedAt    time.Time             `gorm:"column:updated_at;type:datetime;not null" json:"updated_at"`
-	DeletedAt    soft_delete.DeletedAt `gorm:"column:deleted_at;type:bigint unsigned;not null;uniqueIndex:uk_role_perm,priority:3;index;softDelete:milli" json:"deleted_at,omitempty"`
+	ID           int64                 `gorm:"column:id;type:bigint;primaryKey;autoIncrement:true" json:"id"`
+	RoleID       int64                 `gorm:"column:role_id;type:bigint;not null;uniqueIndex:uk_role_perm,priority:2;comment:角色ID" json:"role_id"`                                                                // 角色ID
+	PermissionID int64                 `gorm:"column:permission_id;type:bigint;not null;uniqueIndex:uk_role_perm,priority:1;index:idx_role_permission_permission_id,priority:1;comment:权限ID" json:"permission_id"` // 权限ID
+	Effect       PermissionEffect      `gorm:"column:effect;type:character varying(8);not null;default:allow;comment:效果 allow/deny" json:"effect"`                                                                 // 效果 allow/deny
+	CreatedAt    time.Time             `gorm:"column:created_at;type:timestamp with time zone;not null;default:now()" json:"created_at"`
+	UpdatedAt    time.Time             `gorm:"column:updated_at;type:timestamp with time zone;not null;default:now()" json:"updated_at"`
+	DeletedAt    soft_delete.DeletedAt `gorm:"column:deleted_at;type:bigint;not null;index;softDelete:milli" json:"deleted_at,omitempty"`
 }
 
 // TableName RolePermission's table name

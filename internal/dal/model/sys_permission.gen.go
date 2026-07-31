@@ -12,19 +12,19 @@ import (
 
 const TableNamePermission = "sys_permission"
 
-// Permission 权限表
+// Permission mapped from table <sys_permission>
 type Permission struct {
-	ID           uint64                `gorm:"column:id;type:bigint unsigned;primaryKey;autoIncrement:true" json:"id"`
-	Code         string                `gorm:"column:code;type:varchar(128);not null;uniqueIndex:idx_code,priority:1;comment:权限标识 eg:user:create" json:"code"`                                                                         // 权限标识 eg:user:create
-	Name         string                `gorm:"column:name;type:varchar(128);not null;comment:权限显示名称" json:"name"`                                                                                                                      // 权限显示名称
-	ResourceType ResourceType          `gorm:"column:resource_type;type:tinyint;not null;index:idx_module_resource_type,priority:2;comment:资源类型 1=api 2=frontend-menu 3=frontend-route 4=frontend-button 5=data" json:"resource_type"` // 资源类型 1=api 2=frontend-menu 3=frontend-route 4=frontend-button 5=data
-	Module       string                `gorm:"column:module;type:varchar(64);not null;index:idx_module_resource_type,priority:1;comment:所属模块" json:"module"`                                                                           // 所属模块
-	ResourcePath string                `gorm:"column:resource_path;type:varchar(256);not null;comment:资源路径" json:"resource_path"`                                                                                                      // 资源路径
-	Action       PermissionAction      `gorm:"column:action;type:varchar(32);not null;comment:操作 create/read/update/delete" json:"action"`                                                                                             // 操作 create/read/update/delete
-	Description  string                `gorm:"column:description;type:varchar(256);not null;comment:权限描述" json:"description"`                                                                                                          // 权限描述
-	CreatedAt    time.Time             `gorm:"column:created_at;type:datetime;not null" json:"created_at"`
-	UpdatedAt    time.Time             `gorm:"column:updated_at;type:datetime;not null" json:"updated_at"`
-	DeletedAt    soft_delete.DeletedAt `gorm:"column:deleted_at;type:bigint unsigned;not null;index;softDelete:milli" json:"deleted_at,omitempty"`
+	ID           int64                 `gorm:"column:id;type:bigint;primaryKey;autoIncrement:true" json:"id"`
+	Code         string                `gorm:"column:code;type:character varying(128);not null;uniqueIndex:idx_permission_code,priority:1;comment:权限标识 eg:user:create" json:"code"`                                                                // 权限标识 eg:user:create
+	Name         string                `gorm:"column:name;type:character varying(128);not null;comment:权限显示名称" json:"name"`                                                                                                                        // 权限显示名称
+	ResourceType ResourceType          `gorm:"column:resource_type;type:smallint;not null;index:idx_permission_module_resource_type,priority:2;comment:资源类型 1=api 2=frontend-menu 3=frontend-route 4=frontend-button 5=data" json:"resource_type"` // 资源类型 1=api 2=frontend-menu 3=frontend-route 4=frontend-button 5=data
+	Module       string                `gorm:"column:module;type:character varying(64);not null;index:idx_permission_module_resource_type,priority:1;comment:所属模块" json:"module"`                                                                  // 所属模块
+	ResourcePath string                `gorm:"column:resource_path;type:character varying(256);not null;comment:资源路径" json:"resource_path"`                                                                                                        // 资源路径
+	Action       PermissionAction      `gorm:"column:action;type:character varying(32);not null;comment:操作 create/read/update/delete" json:"action"`                                                                                               // 操作 create/read/update/delete
+	Description  string                `gorm:"column:description;type:character varying(256);not null;comment:权限描述" json:"description"`                                                                                                            // 权限描述
+	CreatedAt    time.Time             `gorm:"column:created_at;type:timestamp with time zone;not null;default:now()" json:"created_at"`
+	UpdatedAt    time.Time             `gorm:"column:updated_at;type:timestamp with time zone;not null;default:now()" json:"updated_at"`
+	DeletedAt    soft_delete.DeletedAt `gorm:"column:deleted_at;type:bigint;not null;index;softDelete:milli" json:"deleted_at,omitempty"`
 	Roles        []Role                `gorm:"many2many:sys_role_permission" json:"roles"`
 }
 

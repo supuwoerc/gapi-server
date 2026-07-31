@@ -16,7 +16,7 @@ const (
 
 type Claims struct {
 	gojwt.RegisteredClaims
-	UserID   uint64    `json:"uid"`
+	UserID   int64     `json:"uid"`
 	Username string    `json:"username"`
 	Type     TokenType `json:"type"`
 }
@@ -42,7 +42,7 @@ func NewManager(secret, issuer string, accessMinutes, refreshHours int) *Manager
 	}
 }
 
-func (m *Manager) GenerateTokenPair(userID uint64, username string) (*TokenPair, error) {
+func (m *Manager) GenerateTokenPair(userID int64, username string) (*TokenPair, error) {
 	accessToken, err := m.generateToken(userID, username, AccessTokenType, m.accessTokenExpiry)
 	if err != nil {
 		return nil, fmt.Errorf("generate access token: %w", err)
@@ -66,7 +66,7 @@ func (m *Manager) RefreshTokenExpiry() time.Duration {
 	return m.refreshTokenExpiry
 }
 
-func (m *Manager) generateToken(userID uint64, username string, tokenType TokenType, expiry time.Duration) (string, error) {
+func (m *Manager) generateToken(userID int64, username string, tokenType TokenType, expiry time.Duration) (string, error) {
 	now := time.Now()
 	claims := &Claims{
 		RegisteredClaims: gojwt.RegisteredClaims{

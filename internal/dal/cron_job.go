@@ -24,6 +24,11 @@ func (d *CronJobDal) UpsertJob(ctx context.Context, job *model.CronJob) error {
 	q := d.getQuery(ctx).CronJob
 	return d.DB.WithContext(ctx).Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: q.Name.ColumnName().String()}},
+		// idx_cron_job_name 是部分唯一索引(WHERE deleted_at = 0), PG 要求推断谓词
+		// 与索引谓词匹配, 否则报 "no unique or exclusion constraint matching"
+		TargetWhere: clause.Where{Exprs: []clause.Expression{
+			clause.Eq{Column: q.DeletedAt.ColumnName().String(), Value: 0},
+		}},
 		DoUpdates: clause.AssignmentColumns([]string{
 			q.Interval.ColumnName().String(),
 			q.Description.ColumnName().String(),
@@ -63,7 +68,7 @@ func (d *CronJobDal) CreateExecution(ctx context.Context, exec *model.CronJobExe
 	return q.WithContext(ctx).Create(exec)
 }
 
-func (d *CronJobDal) FinishExecution(ctx context.Context, id uint64, status string, endedAt time.Time, errMsg string) error {
+func (d *CronJobDal) FinishExecution(ctx context.Context, id int64, status string, endedAt time.Time, errMsg string) error {
 	q := d.getQuery(ctx).CronJobExecution
 	_, err := q.WithContext(ctx).Where(q.ID.Eq(id)).UpdateSimple(
 		q.Status.Value(status),

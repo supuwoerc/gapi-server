@@ -28,10 +28,10 @@ func newRole(db *gorm.DB, opts ...gen.DOOption) role {
 
 	tableName := _role.roleDo.TableName()
 	_role.ALL = field.NewAsterisk(tableName)
-	_role.ID = field.NewUint64(tableName, "id")
+	_role.ID = field.NewInt64(tableName, "id")
 	_role.Name = field.NewString(tableName, "name")
 	_role.Code = field.NewString(tableName, "code")
-	_role.ParentID = field.NewUint64(tableName, "parent_id")
+	_role.ParentID = field.NewInt64(tableName, "parent_id")
 	_role.Description = field.NewString(tableName, "description")
 	_role.SortOrder = field.NewInt32(tableName, "sort_order")
 	_role.Enabled = field.NewBool(tableName, "enabled")
@@ -66,15 +66,14 @@ func newRole(db *gorm.DB, opts ...gen.DOOption) role {
 	return _role
 }
 
-// role 角色表
 type role struct {
 	roleDo roleDo
 
 	ALL         field.Asterisk
-	ID          field.Uint64
+	ID          field.Int64
 	Name        field.String // 角色显示名称
 	Code        field.String // 角色唯一标识
-	ParentID    field.Uint64 // 父角色ID
+	ParentID    field.Int64  // 父角色ID
 	Description field.String // 角色描述
 	SortOrder   field.Int32  // 排序
 	Enabled     field.Bool   // 是否启用
@@ -102,10 +101,10 @@ func (r role) As(alias string) *role {
 
 func (r *role) updateTableName(table string) *role {
 	r.ALL = field.NewAsterisk(table)
-	r.ID = field.NewUint64(table, "id")
+	r.ID = field.NewInt64(table, "id")
 	r.Name = field.NewString(table, "name")
 	r.Code = field.NewString(table, "code")
-	r.ParentID = field.NewUint64(table, "parent_id")
+	r.ParentID = field.NewInt64(table, "parent_id")
 	r.Description = field.NewString(table, "description")
 	r.SortOrder = field.NewInt32(table, "sort_order")
 	r.Enabled = field.NewBool(table, "enabled")

@@ -13,6 +13,11 @@ func (i *ResourceType) Scan(src any) error {
 	switch v := src.(type) {
 	case int64:
 		*i = ResourceType(v)
+	case int32:
+		*i = ResourceType(v)
+	// PostgreSQL 的 SMALLINT 经 pgx 以 int16 递送
+	case int16:
+		*i = ResourceType(v)
 	case int:
 		*i = ResourceType(v)
 	case string:

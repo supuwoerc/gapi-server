@@ -28,7 +28,7 @@ func newCronJobExecution(db *gorm.DB, opts ...gen.DOOption) cronJobExecution {
 
 	tableName := _cronJobExecution.cronJobExecutionDo.TableName()
 	_cronJobExecution.ALL = field.NewAsterisk(tableName)
-	_cronJobExecution.ID = field.NewUint64(tableName, "id")
+	_cronJobExecution.ID = field.NewInt64(tableName, "id")
 	_cronJobExecution.JobName = field.NewString(tableName, "job_name")
 	_cronJobExecution.Status = field.NewString(tableName, "status")
 	_cronJobExecution.StartedAt = field.NewTime(tableName, "started_at")
@@ -45,12 +45,11 @@ func newCronJobExecution(db *gorm.DB, opts ...gen.DOOption) cronJobExecution {
 	return _cronJobExecution
 }
 
-// cronJobExecution 定时任务执行日志
 type cronJobExecution struct {
 	cronJobExecutionDo cronJobExecutionDo
 
 	ALL         field.Asterisk
-	ID          field.Uint64
+	ID          field.Int64
 	JobName     field.String // 任务名称
 	Status      field.String // 执行状态(running/success/failed/cancelled/panic)
 	StartedAt   field.Time   // 开始时间
@@ -77,7 +76,7 @@ func (c cronJobExecution) As(alias string) *cronJobExecution {
 
 func (c *cronJobExecution) updateTableName(table string) *cronJobExecution {
 	c.ALL = field.NewAsterisk(table)
-	c.ID = field.NewUint64(table, "id")
+	c.ID = field.NewInt64(table, "id")
 	c.JobName = field.NewString(table, "job_name")
 	c.Status = field.NewString(table, "status")
 	c.StartedAt = field.NewTime(table, "started_at")

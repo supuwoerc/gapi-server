@@ -12,18 +12,18 @@ import (
 
 const TableNameRole = "sys_role"
 
-// Role 角色表
+// Role mapped from table <sys_role>
 type Role struct {
-	ID          uint64                `gorm:"column:id;type:bigint unsigned;primaryKey;autoIncrement:true" json:"id"`
-	Name        string                `gorm:"column:name;type:varchar(64);not null;comment:角色显示名称" json:"name"`                                    // 角色显示名称
-	Code        string                `gorm:"column:code;type:varchar(64);not null;uniqueIndex:idx_code,priority:1;comment:角色唯一标识" json:"code"`    // 角色唯一标识
-	ParentID    *uint64               `gorm:"column:parent_id;type:bigint unsigned;index:idx_parent_id,priority:1;comment:父角色ID" json:"parent_id"` // 父角色ID
-	Description string                `gorm:"column:description;type:varchar(256);not null;comment:角色描述" json:"description"`                       // 角色描述
-	SortOrder   int32                 `gorm:"column:sort_order;type:int;not null;comment:排序" json:"sort_order"`                                    // 排序
-	Enabled     bool                  `gorm:"column:enabled;type:tinyint(1);not null;default:1;comment:是否启用" json:"enabled"`                       // 是否启用
-	CreatedAt   time.Time             `gorm:"column:created_at;type:datetime;not null" json:"created_at"`
-	UpdatedAt   time.Time             `gorm:"column:updated_at;type:datetime;not null" json:"updated_at"`
-	DeletedAt   soft_delete.DeletedAt `gorm:"column:deleted_at;type:bigint unsigned;not null;index;softDelete:milli" json:"deleted_at,omitempty"`
+	ID          int64                 `gorm:"column:id;type:bigint;primaryKey;autoIncrement:true" json:"id"`
+	Name        string                `gorm:"column:name;type:character varying(64);not null;comment:角色显示名称" json:"name"`                                      // 角色显示名称
+	Code        string                `gorm:"column:code;type:character varying(64);not null;uniqueIndex:idx_role_code,priority:1;comment:角色唯一标识" json:"code"` // 角色唯一标识
+	ParentID    *int64                `gorm:"column:parent_id;type:bigint;index:idx_role_parent_id,priority:1;comment:父角色ID" json:"parent_id"`                 // 父角色ID
+	Description string                `gorm:"column:description;type:character varying(256);not null;comment:角色描述" json:"description"`                         // 角色描述
+	SortOrder   int32                 `gorm:"column:sort_order;type:integer;not null;comment:排序" json:"sort_order"`                                            // 排序
+	Enabled     bool                  `gorm:"column:enabled;type:boolean;not null;default:true;comment:是否启用" json:"enabled"`                                   // 是否启用
+	CreatedAt   time.Time             `gorm:"column:created_at;type:timestamp with time zone;not null;default:now()" json:"created_at"`
+	UpdatedAt   time.Time             `gorm:"column:updated_at;type:timestamp with time zone;not null;default:now()" json:"updated_at"`
+	DeletedAt   soft_delete.DeletedAt `gorm:"column:deleted_at;type:bigint;not null;index;softDelete:milli" json:"deleted_at,omitempty"`
 	Permissions []Permission          `gorm:"many2many:sys_role_permission" json:"permissions"`
 	Parent      *Role                 `gorm:"foreignKey:ParentID" json:"parent"`
 	Children    []Role                `gorm:"foreignKey:ParentID" json:"children"`

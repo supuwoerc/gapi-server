@@ -12,14 +12,14 @@ import (
 
 const TableNameUserRole = "sys_user_role"
 
-// UserRole 用户角色关联表
+// UserRole mapped from table <sys_user_role>
 type UserRole struct {
-	ID        uint64                `gorm:"column:id;type:bigint unsigned;primaryKey;autoIncrement:true" json:"id"`
-	UserID    uint64                `gorm:"column:user_id;type:bigint unsigned;not null;uniqueIndex:uk_user_role,priority:1;comment:用户ID" json:"user_id"`                              // 用户ID
-	RoleID    uint64                `gorm:"column:role_id;type:bigint unsigned;not null;uniqueIndex:uk_user_role,priority:2;index:idx_role_id,priority:1;comment:角色ID" json:"role_id"` // 角色ID
-	CreatedAt time.Time             `gorm:"column:created_at;type:datetime;not null" json:"created_at"`
-	UpdatedAt time.Time             `gorm:"column:updated_at;type:datetime;not null" json:"updated_at"`
-	DeletedAt soft_delete.DeletedAt `gorm:"column:deleted_at;type:bigint unsigned;not null;uniqueIndex:uk_user_role,priority:3;index;softDelete:milli" json:"deleted_at,omitempty"`
+	ID        int64                 `gorm:"column:id;type:bigint;primaryKey;autoIncrement:true" json:"id"`
+	UserID    int64                 `gorm:"column:user_id;type:bigint;not null;uniqueIndex:uk_user_role,priority:2;comment:用户ID" json:"user_id"`                                        // 用户ID
+	RoleID    int64                 `gorm:"column:role_id;type:bigint;not null;uniqueIndex:uk_user_role,priority:1;index:idx_user_role_role_id,priority:1;comment:角色ID" json:"role_id"` // 角色ID
+	CreatedAt time.Time             `gorm:"column:created_at;type:timestamp with time zone;not null;default:now()" json:"created_at"`
+	UpdatedAt time.Time             `gorm:"column:updated_at;type:timestamp with time zone;not null;default:now()" json:"updated_at"`
+	DeletedAt soft_delete.DeletedAt `gorm:"column:deleted_at;type:bigint;not null;index;softDelete:milli" json:"deleted_at,omitempty"`
 }
 
 // TableName UserRole's table name

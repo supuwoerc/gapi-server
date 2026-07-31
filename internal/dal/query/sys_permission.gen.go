@@ -28,7 +28,7 @@ func newPermission(db *gorm.DB, opts ...gen.DOOption) permission {
 
 	tableName := _permission.permissionDo.TableName()
 	_permission.ALL = field.NewAsterisk(tableName)
-	_permission.ID = field.NewUint64(tableName, "id")
+	_permission.ID = field.NewInt64(tableName, "id")
 	_permission.Code = field.NewString(tableName, "code")
 	_permission.Name = field.NewString(tableName, "name")
 	_permission.ResourceType = field.NewField(tableName, "resource_type")
@@ -50,12 +50,11 @@ func newPermission(db *gorm.DB, opts ...gen.DOOption) permission {
 	return _permission
 }
 
-// permission 权限表
 type permission struct {
 	permissionDo permissionDo
 
 	ALL          field.Asterisk
-	ID           field.Uint64
+	ID           field.Int64
 	Code         field.String // 权限标识 eg:user:create
 	Name         field.String // 权限显示名称
 	ResourceType field.Field  // 资源类型 1=api 2=frontend-menu 3=frontend-route 4=frontend-button 5=data
@@ -83,7 +82,7 @@ func (p permission) As(alias string) *permission {
 
 func (p *permission) updateTableName(table string) *permission {
 	p.ALL = field.NewAsterisk(table)
-	p.ID = field.NewUint64(table, "id")
+	p.ID = field.NewInt64(table, "id")
 	p.Code = field.NewString(table, "code")
 	p.Name = field.NewString(table, "name")
 	p.ResourceType = field.NewField(table, "resource_type")

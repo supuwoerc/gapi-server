@@ -43,7 +43,7 @@ func resolvePermissions(rows []codeWithEffect) []string {
 	return result
 }
 
-func (d *PermissionDal) FindCodesByRoleIDsAndResourceType(ctx context.Context, roleIDs []uint64, resourceType model.ResourceType) ([]string, error) {
+func (d *PermissionDal) FindCodesByRoleIDsAndResourceType(ctx context.Context, roleIDs []int64, resourceType model.ResourceType) ([]string, error) {
 	if len(roleIDs) == 0 {
 		return []string{}, nil
 	}
@@ -64,7 +64,7 @@ func (d *PermissionDal) FindCodesByRoleIDsAndResourceType(ctx context.Context, r
 	return resolvePermissions(rows), nil
 }
 
-func (d *PermissionDal) FindCodesByRoleIDsAndModule(ctx context.Context, roleIDs []uint64, module string) ([]string, error) {
+func (d *PermissionDal) FindCodesByRoleIDsAndModule(ctx context.Context, roleIDs []int64, module string) ([]string, error) {
 	if len(roleIDs) == 0 {
 		return []string{}, nil
 	}

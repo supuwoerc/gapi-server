@@ -40,17 +40,17 @@ func (d *UserDal) FindByUsername(ctx context.Context, username string) (*model.U
 	return q.WithContext(ctx).Where(q.Username.Eq(username)).First()
 }
 
-func (d *UserDal) FindByID(ctx context.Context, id uint64) (*model.User, error) {
+func (d *UserDal) FindByID(ctx context.Context, id int64) (*model.User, error) {
 	q := d.getQuery(ctx).User
 	return q.WithContext(ctx).Where(q.ID.Eq(id)).First()
 }
 
-func (d *UserDal) FindByIDWithRoles(ctx context.Context, id uint64) (*model.User, error) {
+func (d *UserDal) FindByIDWithRoles(ctx context.Context, id int64) (*model.User, error) {
 	q := d.getQuery(ctx).User
 	return q.WithContext(ctx).Preload(q.Roles).Where(q.ID.Eq(id)).First()
 }
 
-func (d *UserDal) UpdateLastLogin(ctx context.Context, id uint64) error {
+func (d *UserDal) UpdateLastLogin(ctx context.Context, id int64) error {
 	q := d.getQuery(ctx).User
 	now := time.Now()
 	_, err := q.WithContext(ctx).Where(q.ID.Eq(id)).UpdateSimple(
@@ -60,7 +60,7 @@ func (d *UserDal) UpdateLastLogin(ctx context.Context, id uint64) error {
 	return err
 }
 
-func (d *UserDal) IncrementLoginFail(ctx context.Context, id uint64) error {
+func (d *UserDal) IncrementLoginFail(ctx context.Context, id int64) error {
 	q := d.getQuery(ctx).User
 	_, err := q.WithContext(ctx).Where(q.ID.Eq(id)).UpdateSimple(
 		q.LoginFailCount.SetCol(q.LoginFailCount.Add(1)),
@@ -68,7 +68,7 @@ func (d *UserDal) IncrementLoginFail(ctx context.Context, id uint64) error {
 	return err
 }
 
-func (d *UserDal) LockUser(ctx context.Context, id uint64, until time.Time) error {
+func (d *UserDal) LockUser(ctx context.Context, id int64, until time.Time) error {
 	q := d.getQuery(ctx).User
 	_, err := q.WithContext(ctx).Where(q.ID.Eq(id)).UpdateSimple(
 		q.LockedUntil.Value(until),
@@ -76,7 +76,7 @@ func (d *UserDal) LockUser(ctx context.Context, id uint64, until time.Time) erro
 	return err
 }
 
-func (d *UserDal) UpdateCompletedTours(ctx context.Context, id uint64, tours []string) error {
+func (d *UserDal) UpdateCompletedTours(ctx context.Context, id int64, tours []string) error {
 	q := d.getQuery(ctx).User
 	_, err := q.WithContext(ctx).Where(q.ID.Eq(id)).UpdateSimple(
 		q.CompletedTours.Value(datatypes.JSONSlice[string](tours)),
@@ -84,7 +84,7 @@ func (d *UserDal) UpdateCompletedTours(ctx context.Context, id uint64, tours []s
 	return err
 }
 
-func (d *UserDal) UpdateProfile(ctx context.Context, id uint64, username, bio, avatar string) error {
+func (d *UserDal) UpdateProfile(ctx context.Context, id int64, username, bio, avatar string) error {
 	q := d.getQuery(ctx).User
 	_, err := q.WithContext(ctx).Where(q.ID.Eq(id)).UpdateSimple(
 		q.Username.Value(username),

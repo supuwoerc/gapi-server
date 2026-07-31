@@ -28,7 +28,7 @@ func newCronJob(db *gorm.DB, opts ...gen.DOOption) cronJob {
 
 	tableName := _cronJob.cronJobDo.TableName()
 	_cronJob.ALL = field.NewAsterisk(tableName)
-	_cronJob.ID = field.NewUint64(tableName, "id")
+	_cronJob.ID = field.NewInt64(tableName, "id")
 	_cronJob.Name = field.NewString(tableName, "name")
 	_cronJob.Description = field.NewString(tableName, "description")
 	_cronJob.Interval = field.NewString(tableName, "interval")
@@ -44,18 +44,17 @@ func newCronJob(db *gorm.DB, opts ...gen.DOOption) cronJob {
 	return _cronJob
 }
 
-// cronJob 定时任务注册表
 type cronJob struct {
 	cronJobDo cronJobDo
 
 	ALL         field.Asterisk
-	ID          field.Uint64
+	ID          field.Int64
 	Name        field.String // 任务唯一标识
 	Description field.String // 任务描述
 	Interval    field.String // cron 表达式（6位含秒）
 	Enabled     field.Bool   // 是否启用
 	LastRunAt   field.Time   // 最近一次执行时间
-	LastStatus  field.String // 最近一次执行状态
+	LastStatus  field.String // 最近一次执行状态, NULL 表示从未执行
 	CreatedAt   field.Time
 	UpdatedAt   field.Time
 	DeletedAt   field.Field
@@ -75,7 +74,7 @@ func (c cronJob) As(alias string) *cronJob {
 
 func (c *cronJob) updateTableName(table string) *cronJob {
 	c.ALL = field.NewAsterisk(table)
-	c.ID = field.NewUint64(table, "id")
+	c.ID = field.NewInt64(table, "id")
 	c.Name = field.NewString(table, "name")
 	c.Description = field.NewString(table, "description")
 	c.Interval = field.NewString(table, "interval")

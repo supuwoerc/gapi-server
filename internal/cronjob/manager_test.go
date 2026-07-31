@@ -33,11 +33,11 @@ type mockRecorder struct{}
 
 func (m *mockRecorder) SyncJobDefinitions(_ context.Context, _ []SystemJob) error { return nil }
 func (m *mockRecorder) IsJobEnabled(_ context.Context, _ string) (bool, error)    { return true, nil }
-func (m *mockRecorder) RecordStart(_ context.Context, _ string, _ model.TriggeredBy) (uint64, error) {
+func (m *mockRecorder) RecordStart(_ context.Context, _ string, _ model.TriggeredBy) (int64, error) {
 	return 1, nil
 }
-func (m *mockRecorder) RecordEnd(_ context.Context, _ uint64, _ string, _ error) error { return nil }
-func (m *mockRecorder) UpdateLastRun(_ context.Context, _ string, _ string) error      { return nil }
+func (m *mockRecorder) RecordEnd(_ context.Context, _ int64, _ string, _ error) error { return nil }
+func (m *mockRecorder) UpdateLastRun(_ context.Context, _ string, _ string) error     { return nil }
 
 type countingJob struct {
 	name  string

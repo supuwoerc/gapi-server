@@ -17,8 +17,8 @@ import (
 type JobRecorder interface {
 	SyncJobDefinitions(ctx context.Context, jobs []SystemJob) error
 	IsJobEnabled(ctx context.Context, name string) (bool, error)
-	RecordStart(ctx context.Context, jobName string, triggeredBy model.TriggeredBy) (uint64, error)
-	RecordEnd(ctx context.Context, executionID uint64, status string, jobErr error) error
+	RecordStart(ctx context.Context, jobName string, triggeredBy model.TriggeredBy) (int64, error)
+	RecordEnd(ctx context.Context, executionID int64, status string, jobErr error) error
 	UpdateLastRun(ctx context.Context, name string, status string) error
 }
 

@@ -7,13 +7,13 @@ import (
 )
 
 type CronJobItem struct {
-	ID          uint64     `json:"id"`
+	ID          int64      `json:"id"`
 	Name        string     `json:"name"`
 	Description string     `json:"description"`
 	Interval    string     `json:"interval"`
 	Enabled     bool       `json:"enabled"`
 	LastRunAt   *time.Time `json:"last_run_at"`
-	LastStatus  string     `json:"last_status"`
+	LastStatus  *string    `json:"last_status"`
 	CreatedAt   time.Time  `json:"created_at"`
 	UpdatedAt   time.Time  `json:"updated_at"`
 }
@@ -41,7 +41,7 @@ func NewCronJobItems(ms []*model.CronJob) []*CronJobItem {
 }
 
 type CronJobExecutionItem struct {
-	ID          uint64     `json:"id"`
+	ID          int64      `json:"id"`
 	JobName     string     `json:"job_name"`
 	Status      string     `json:"status"`
 	StartedAt   time.Time  `json:"started_at"`
