@@ -1,6 +1,6 @@
 # MySQL 迁移到 PostgreSQL 实施计划
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 将 gapi-server 的持久层从 MySQL 8.0 彻底切换到 PostgreSQL 18，不保留 MySQL 兼容路径。
 
@@ -93,7 +93,7 @@
 - Consumes: 无（首个任务）
 - Produces: `config.DatabaseConfig` 新增两个字段 `SSLMode string`（mapstructure `sslmode`）、`TimeZone string`（mapstructure `timezone`）；`database.NewConnection(cfg *config.DatabaseConfig, l *logger.Logger) (*gorm.DB, error)` 签名不变
 
-- [ ] **Step 1: 升级并添加依赖**
+- [x] **Step 1: 升级并添加依赖**
 
 先只加依赖、不动 `go.mod` 的 mysql 条目 —— 此刻 `pkg/database/database.go` 仍在 import mysql driver，提前 droprequire 会让 `go mod tidy` 立刻把它加回来。清理留到 Step 9，代码改完之后做。
 
@@ -104,7 +104,7 @@ go get gorm.io/gorm@latest gorm.io/driver/postgres@latest gorm.io/gen@latest
 go get github.com/jackc/pgx/v5@latest
 ```
 
-- [ ] **Step 2: 核对解析出的版本**
+- [x] **Step 2: 核对解析出的版本**
 
 ```bash
 go list -m gorm.io/gorm gorm.io/driver/postgres gorm.io/gen github.com/jackc/pgx/v5
@@ -121,7 +121,7 @@ github.com/jackc/pgx/v5 v5.10.0
 
 若 pgx 显示 v5.6.0，说明 Step 1 的第二条命令没执行，补跑一次。
 
-- [ ] **Step 3: 写失败测试 —— 配置能读取 sslmode 与 timezone**
+- [x] **Step 3: 写失败测试 —— 配置能读取 sslmode 与 timezone**
 
 修改 `internal/config/config_test.go`，把 `v.Set("database.port", 3306)` 改为 `5432`，并在其后追加两行 Set；同时把第 32 行断言 `3306` 改为 `5432`，然后在该断言后追加两行：
 
@@ -137,12 +137,12 @@ github.com/jackc/pgx/v5 v5.10.0
 	assert.Equal(t, "Asia/Shanghai", cfg.Database.TimeZone)
 ```
 
-- [ ] **Step 4: 运行测试确认失败**
+- [x] **Step 4: 运行测试确认失败**
 
 Run: `go test ./internal/config/ -run TestNewConfig -v`
 Expected: 编译失败，`cfg.Database.SSLMode undefined (type config.DatabaseConfig has no field or method SSLMode)`
 
-- [ ] **Step 5: 给 DatabaseConfig 加字段**
+- [x] **Step 5: 给 DatabaseConfig 加字段**
 
 把 `internal/config/config.go:87-99` 的注释与结构体替换为（注释里的 MySQL 字样一并改掉）：
 
@@ -164,12 +164,12 @@ type DatabaseConfig struct {
 }
 ```
 
-- [ ] **Step 6: 运行测试确认通过**
+- [x] **Step 6: 运行测试确认通过**
 
 Run: `go test ./internal/config/ -run TestNewConfig -v`
 Expected: PASS
 
-- [ ] **Step 7: 替换 driver 导入**
+- [x] **Step 7: 替换 driver 导入**
 
 `pkg/database/database.go:11`，把 `"gorm.io/driver/mysql"` 改为：
 
@@ -177,7 +177,7 @@ Expected: PASS
 	"gorm.io/driver/postgres"
 ```
 
-- [ ] **Step 8: 改写 DSN 构造**
+- [x] **Step 8: 改写 DSN 构造**
 
 替换 `pkg/database/database.go:20-26`。MySQL 的 `charset=utf8mb4&parseTime=True&loc=Local` 三个参数是 MySQL 专属，PG 用 `sslmode` 与 `TimeZone` 代替（PG 的编码由数据库自身的 `ENCODING` 决定，无需连接参数）：
 
@@ -201,7 +201,7 @@ Expected: PASS
 	)
 ```
 
-- [ ] **Step 9: 改 gorm.Open 的方言**
+- [x] **Step 9: 改 gorm.Open 的方言**
 
 `pkg/database/database.go:38`，把 `mysql.Open(dsn)` 改为 `postgres.Open(dsn)`。保留 `NamingStrategy`、`Logger`、`TranslateError: true` 三项不动：
 
@@ -209,7 +209,7 @@ Expected: PASS
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 ```
 
-- [ ] **Step 10: 更新默认配置**
+- [x] **Step 10: 更新默认配置**
 
 替换 `configs/default.yaml:8-18` 的 database 段：
 
@@ -229,7 +229,7 @@ database:
   log_level: 2                # GORM 日志级别 (1=Silent 2=Error 3=Warn 4=Info)
 ```
 
-- [ ] **Step 11: 整理 go.mod 并确认 mysql 已降级为 indirect**
+- [x] **Step 11: 整理 go.mod 并确认 mysql 已降级为 indirect**
 
 代码已不再 import mysql driver，现在 tidy 才能把它移出 `require` 直接块：
 
@@ -247,7 +247,7 @@ Expected: `gorm.io/driver/postgres v1.6.0` 出现在直接依赖块中；`gorm.i
 
 这两个 mysql 条目**不能也不该删掉** —— `gorm.io/gen` 传递依赖它们，手工 droprequire 后下次 tidy 会原样加回。它们不会被编译进二进制，因为没有任何代码 import。
 
-- [ ] **Step 12: 编译并跑全量测试**
+- [x] **Step 12: 编译并跑全量测试**
 
 Run: `go build ./... && go test ./...`
 Expected: 全部 PASS（现有 15 个测试文件都不连数据库，不受影响）
@@ -267,7 +267,7 @@ Expected: 全部 PASS（现有 15 个测试文件都不连数据库，不受影�
 - Consumes: Task 1 的 `configs/default.yaml`（port 5432、user postgres、dbname gapi）
 - Produces: 本机 `127.0.0.1:5432` 上的 PostgreSQL 18，库名 `gapi`，用户 `postgres`，密码 `password`
 
-- [ ] **Step 1: 替换 mysql 服务定义**
+- [x] **Step 1: 替换 mysql 服务定义**
 
 **镜像版本已核实（Task 2 执行时确认）：** 用 `postgres:18-alpine`。PostgreSQL 18 是当前最新大版本（18.4，EOL 2030-11-14；17.10 与 16.14 分别是 17/16 系列的最新补丁）。因为是开发阶段全新建库、无存量数据，直接上 18 而非从落后两个大版本的 16 起步。
 
@@ -299,7 +299,7 @@ Expected: 全部 PASS（现有 15 个测试文件都不连数据库，不受影�
       retries: 10
 ```
 
-- [ ] **Step 2: 更新 volumes 声明**
+- [x] **Step 2: 更新 volumes 声明**
 
 文件末尾的 `volumes:` 段里，把 `mysql_data:` 改为 `postgres_data:`，`redis_data:` 与 `etcd_data:` 不动：
 
@@ -310,7 +310,7 @@ volumes:
   etcd_data:
 ```
 
-- [ ] **Step 3: 启动并确认健康**
+- [x] **Step 3: 启动并确认健康**
 
 ```bash
 docker compose -f deploy/docker/docker-compose.yaml up -d postgres
@@ -319,12 +319,17 @@ docker compose -f deploy/docker/docker-compose.yaml ps postgres
 
 Expected: 状态显示 `healthy`
 
-- [ ] **Step 4: 确认能连上且库存在**
+- [x] **Step 4: 确认能连上且库存在**
 
 Run: `docker exec gapi-postgres psql -U postgres -d gapi -c "SELECT version();"`
 Expected: 输出 `PostgreSQL 18.x ... ` 一行
 
-**Task 2 文件改动完成，Step 3-4 未验证。** 变更文件：`deploy/docker/docker-compose.yaml`。交由用户手动提交，不要执行任何 git 命令。
+**Task 2 完成。** 变更文件：`deploy/docker/docker-compose.yaml`、`deploy/docker/podman-compose.yaml`（新建）。交由用户手动提交，不要执行任何 git 命令。
+
+> 执行时补充：PG 18 的 `PGDATA` 是 `/var/lib/postgresql/18/docker`，而镜像声明的卷是
+> `/var/lib/postgresql`，挂到 `.../data` 会被识别为 "unused mount" 直接启动失败，
+> 必须挂上层目录。另外 etcd 缺 `ETCD_DATA_DIR`，数据实际写在 `/default.etcd`，
+> 挂载卷不生效，已补上。
 
 > ⚠ **本机无容器运行时**（`docker`、`podman`、`colima`、`nerdctl` 均不存在，也没有本地 PostgreSQL 或 `psql`），因此 Step 3「启动并确认健康」与 Step 4「确认能连上」**未执行**。yaml 已通过语法与结构校验（服务名、端口、volume、healthcheck、环境变量、mysql 残留均已核对），但"能否真正拉起并连上"尚未证实。
 >
@@ -361,7 +366,7 @@ Expected: 输出 `PostgreSQL 18.x ... ` 一行
 - 表内联 `UNIQUE INDEX x (col)` / `INDEX x (col)` → PG 不支持写在 CREATE TABLE 里，拆为表外 `CREATE [UNIQUE] INDEX`
 - 反引号 `` `interval` ``（MySQL 保留字转义）→ 双引号 `"interval"`（interval 在 PG 里是类型名，仍需引号）
 
-- [ ] **Step 1: 重写 001**
+- [x] **Step 1: 重写 001**
 
 把 `migrations/001_create_cron_tables.sql` 全文替换为：
 
@@ -423,7 +428,7 @@ COMMENT ON COLUMN sys_cron_job_execution.triggered_by IS '触发方式(scheduler
 
 注意：原 MySQL 版本两张表都有一个叫 `idx_deleted_at` 的索引。MySQL 的索引名只在表内唯一，PG 的索引名在整个 schema 内唯一，所以这里必须改名为 `idx_cron_job_deleted_at` 和 `idx_cron_job_execution_deleted_at`。
 
-- [ ] **Step 2: 执行并确认无错**
+- [x] **Step 2: 执行并确认无错**
 
 ```bash
 docker exec -i gapi-postgres psql -U postgres -d gapi -v ON_ERROR_STOP=1 < migrations/001_create_cron_tables.sql
@@ -431,7 +436,7 @@ docker exec -i gapi-postgres psql -U postgres -d gapi -v ON_ERROR_STOP=1 < migra
 
 Expected: 输出若干 `CREATE TABLE` / `CREATE INDEX` / `COMMENT`，无 ERROR
 
-- [ ] **Step 3: 验证表结构**
+- [x] **Step 3: 验证表结构**
 
 Run: `docker exec gapi-postgres psql -U postgres -d gapi -c "\d sys_cron_job"`
 Expected: `id` 为 `bigint`、default `nextval('sys_cron_job_id_seq'::regclass)`；`enabled` 为 `boolean` default true；`"interval"` 列存在；索引含 `idx_name`（UNIQUE）
@@ -451,7 +456,7 @@ Expected: `id` 为 `bigint`、default `nextval('sys_cron_job_id_seq'::regclass)`
 - Consumes: Task 3 的转换要点与已建好的 cron 表
 - Produces: `sys_user`、`sys_role`、`sys_permission`、`sys_user_role`、`sys_role_permission` 五张表 + 前端权限 seed 数据
 
-- [ ] **Step 1: 重写 002 的用户表与角色表**
+- [x] **Step 1: 重写 002 的用户表与角色表**
 
 把 `migrations/002_create_user_permission_tables.sql` 全文替换。先写前两张表：
 
@@ -521,7 +526,7 @@ COMMENT ON COLUMN sys_role.sort_order IS '排序';
 COMMENT ON COLUMN sys_role.enabled IS '是否启用';
 ```
 
-- [ ] **Step 2: 追加权限表**
+- [x] **Step 2: 追加权限表**
 
 接着在同一文件末尾追加。注意 `resource_type` 从 `TINYINT` 变为 `SMALLINT`，`idx_code` 已被 `sys_role` 占用，权限表的必须改名为 `idx_permission_code`：
 
@@ -556,7 +561,7 @@ COMMENT ON COLUMN sys_permission.action IS '操作 create/read/update/delete';
 COMMENT ON COLUMN sys_permission.description IS '权限描述';
 ```
 
-- [ ] **Step 3: 追加两张关联表**
+- [x] **Step 3: 追加两张关联表**
 
 继续在文件末尾追加。两个联合唯一索引都包含 `deleted_at`，这是软删除后允许重新插入同一组合的关键，必须保留：
 
@@ -602,7 +607,7 @@ COMMENT ON COLUMN sys_role_permission.permission_id IS '权限ID';
 COMMENT ON COLUMN sys_role_permission.effect IS '效果 allow/deny';
 ```
 
-- [ ] **Step 4: 执行 002 并验证**
+- [x] **Step 4: 执行 002 并验证**
 
 ```bash
 docker exec -i gapi-postgres psql -U postgres -d gapi -v ON_ERROR_STOP=1 < migrations/002_create_user_permission_tables.sql
@@ -611,7 +616,7 @@ docker exec gapi-postgres psql -U postgres -d gapi -c "\dt sys_*"
 
 Expected: 列出 7 张表（cron 2 张 + 本次 5 张），无 ERROR
 
-- [ ] **Step 5: 调整 003 seed 脚本**
+- [x] **Step 5: 调整 003 seed 脚本**
 
 `migrations/003_seed_frontend_permissions.sql` 的两段 `INSERT ... VALUES` 在 PG 下完全可用，`NOW()` 也是标准函数，无需改动。只有末尾两条 `INSERT ... SELECT` 用了 MySQL 风格的隐式笛卡尔积 `FROM sys_role r, sys_permission p` —— 这在 PG 下同样合法，但显式 `CROSS JOIN` 更清晰。把最后两条语句替换为：
 
@@ -635,7 +640,7 @@ WHERE r.code = 'user'
   AND p.code NOT LIKE 'route:admin%';
 ```
 
-- [ ] **Step 6: 执行 003 并验证权限已插入**
+- [x] **Step 6: 执行 003 并验证权限已插入**
 
 003 依赖 `sys_role` 里存在 `admin` / `user` 两个角色。开发库是空的，所以先插入这两个角色，再跑 seed：
 
@@ -651,7 +656,7 @@ Expected: `admin` 20 条（10 menu + 10 route），`user` 12 条（排除 4 个 
 
 > 计划初稿写的 14（按排除 3+3 算）是错的。`admin%` 实际匹配 4 个 menu（`admin`、`admin:users`、`admin:roles`、`admin:permissions`），`route:admin%` 同样匹配 4 个 route，共排除 8 条。Task 4 执行时实测确认为 12。
 
-- [ ] **Step 7: 写 migrations 执行说明**
+- [x] **Step 7: 写 migrations 执行说明**
 
 项目当前没有 migration runner，也没有 `AutoMigrate` 调用，SQL 靠手工执行。新建 `migrations/README.md`，内容如下（注意这里外层用四个反引号包裹，实际文件内容里是三个）：
 
@@ -742,7 +747,7 @@ pgx 的 `stdlib/sql.go:697` `ColumnTypeScanType` 实际映射（PG 上报的是 
   - `dal.PermissionDal.FindCodesByRoleIDsAndResourceType(ctx context.Context, roleIDs []int64, resourceType model.ResourceType) ([]string, error)`
   - `service.CronJobService.RecordStart(ctx context.Context, jobName string, triggeredBy model.TriggeredBy) (int64, error)`
 
-- [ ] **Step 1: 关掉 FieldSignable**
+- [x] **Step 1: 关掉 FieldSignable**
 
 `FieldSignable: true` 的作用是让 gen 按数据库的 unsigned 标记生成无符号 Go 类型。PG 没有 unsigned，这个开关已无意义，留着会造成误解。修改 `cmd/gen/main.go:20-29`：
 
@@ -758,7 +763,7 @@ pgx 的 `stdlib/sql.go:697` `ColumnTypeScanType` 实际映射（PG 上报的是 
 	})
 ```
 
-- [ ] **Step 2: 重新生成 DAL**
+- [x] **Step 2: 重新生成 DAL**
 
 ```bash
 go generate ./cmd/gen
@@ -766,7 +771,7 @@ go generate ./cmd/gen
 
 Expected: `internal/dal/model/` 与 `internal/dal/query/` 下 14 个 `.gen.go` 被重写
 
-- [ ] **Step 3: 确认生成结果的类型变化**
+- [x] **Step 3: 确认生成结果的类型变化**
 
 ```bash
 grep -n "ID " internal/dal/model/sys_user.gen.go | head -3
@@ -778,7 +783,7 @@ Expected: `ID int64`，gorm tag 里 `type:bigint`；`CompletedTours datatypes.JS
 
 若 `CompletedTours` 生成成了 `string`，说明 `cmd/gen/main.go:70` 的 `FieldType` 覆盖丢了 —— pgx 对 `jsonb` 会落到 default 分支返回 `string`，必须靠那行覆盖挡住。
 
-- [ ] **Step 4: 给 ResourceType.Scan 补 int16 分支**
+- [x] **Step 4: 给 ResourceType.Scan 补 int16 分支**
 
 PG 的 `SMALLINT`（udt_name `int2`）经 pgx 以 **`int16`** 递送，而 `ResourceType.Scan` 当前只处理 `int64`/`int`/`string`/`[]byte`，会在运行时报 `cannot scan int16 into ResourceType`。MySQL 的 `TINYINT` 走的是 `int64`，所以这个问题只在 PG 下出现。
 
@@ -818,17 +823,17 @@ func (i *ResourceType) Scan(src any) error {
 
 其余三个枚举（`PermissionAction`、`PermissionEffect`、`TriggeredBy`）底层是 `string`，对应 `VARCHAR`，pgx 递送 `string`，已有的 `string`/`[]byte` 两个 case 足够，**不需要改**。
 
-- [ ] **Step 5: 确认 int16 分支编译通过**
+- [x] **Step 5: 确认 int16 分支编译通过**
 
 Run: `go build ./internal/dal/model/`
 Expected: 编译通过
 
-- [ ] **Step 6: 确认编译失败，看到全部待改点**
+- [x] **Step 6: 确认编译失败，看到全部待改点**
 
 Run: `go build ./... 2>&1 | head -40`
 Expected: 大量 `cannot use ... (variable of type uint64) as int64 value` 类型错误，集中在 dal / service / handler / middleware
 
-- [ ] **Step 7: 批量替换业务代码里的 uint64**
+- [x] **Step 7: 批量替换业务代码里的 uint64**
 
 这些文件里 `uint64` 全部表示实体 ID，可安全整体替换。`pkg/etcd/balancer.go:25` 的 `uint64(len(instances))` 是哈希取模，与数据库无关，**不要改**：
 
@@ -854,17 +859,17 @@ do
 done
 ```
 
-- [ ] **Step 8: 确认 etcd 的 uint64 未被误改**
+- [x] **Step 8: 确认 etcd 的 uint64 未被误改**
 
 Run: `grep -n "uint64" pkg/etcd/balancer.go`
 Expected: 第 25 行 `return instances[idx%uint64(len(instances))], nil` 仍在（这是哈希取模，与 DB 无关）
 
-- [ ] **Step 9: 编译**
+- [x] **Step 9: 编译**
 
 Run: `go build ./...`
 Expected: 编译通过。若仍报错，按提示逐个修正剩余 `uint64`（注意 `resp/cron_job.go` 的两处 `ID` 是 API 响应字段）
 
-- [ ] **Step 10: 跑全量测试**
+- [x] **Step 10: 跑全量测试**
 
 Run: `go test ./...`
 Expected: 全部 PASS。`pkg/jwt/jwt_test.go` 的 `assert.Equal(t, int64(1), claims.UserID)` 与 `internal/cronjob/manager_test.go` 的 mock 签名都已被 Step 7 同步改掉
@@ -872,6 +877,25 @@ Expected: 全部 PASS。`pkg/jwt/jwt_test.go` 的 `assert.Equal(t, int64(1), cla
 **Task 5 完成。** 变更文件：`cmd/gen/main.go`、`internal/dal/model/*.gen.go` 与 `internal/dal/query/*.gen.go`（14 个生成文件）、`internal/dal/model/permission_resource_type.go`、`internal/dal/{user,permission,cron_job,token}.go`、`internal/service/{auth,user,cron_job}.go`、`internal/handler/v1/{auth,user}.go`、`internal/handler/v1/resp/cron_job.go`、`internal/middleware/auth.go`、`internal/cronjob/{manager,manager_test}.go`、`pkg/jwt/{jwt,jwt_test}.go`。交由用户手动提交，不要执行任何 git 命令。
 
 这个任务的改动面最大且必须整体生效 —— 生成代码与手写代码的类型不一致时无法编译，所以提交时这批文件应作为一个整体。
+
+> **执行时的三处偏差：**
+>
+> 1. **Step 7 的 sed 命令在 macOS 上静默失效。** `\b` 词边界是 GNU sed 扩展，
+>    BSD sed 不认，命令退出码为 0 但 15 个文件一字未改。改用
+>    `perl -pi -e 's/\buint64\b/int64/g'` 完成。
+> 2. **`zap.Uint64` 是计划未预料的编译错误来源。** 替换完 `uint64` 后仍有 9 处报错，
+>    来自 `zap.Uint64("userID", ...)` —— 参数类型是函数签名的一部分，`uint64`
+>    关键字不出现在调用处，sed/perl 都抓不到。已改为 `zap.Int64`。
+>    `internal/jobs/server_status.go:40-41` 的两处是 `runtime.MemStats` 字节数，
+>    与 DB 无关，保留。
+> 3. **`go generate ./cmd/gen` 跑不通。** `//go:generate go run .` 的工作目录是
+>    `cmd/gen`，而 `internal/config/viper.go` 用相对路径 `./configs` 找配置，
+>    落到空的 `cmd/gen/configs/` 直接 panic。必须在仓库根目录执行
+>    `go run ./cmd/gen`。README 已同步纠正。
+>
+> 另外 Step 6 的预期"确认编译失败"有个前提要注意：编译失败只在
+> `go generate` 成功重新生成模型之后才会出现。模型还是旧的时候 `go build`
+> 是通过的，不能把"编译通过"当成 Task 5 已完成的信号。
 
 ---
 
@@ -890,7 +914,7 @@ Expected: 全部 PASS。`pkg/jwt/jwt_test.go` 的 `assert.Equal(t, int64(1), cla
 
 除三个高风险点外，还要覆盖 Task 5 Step 4 改的 `ResourceType.Scan` —— `SMALLINT` 经 pgx 递送为 `int16`，这条路径只有真连 PG 才能验证。
 
-- [ ] **Step 1: 写集成测试**
+- [x] **Step 1: 写集成测试**
 
 新建 `internal/dal/postgres_integration_test.go`。用构建标签隔离，避免污染 `go test ./...`：
 
@@ -1064,19 +1088,19 @@ func roleIDsOf(t *testing.T, db *gorm.DB, code string) []int64 {
 }
 ```
 
-- [ ] **Step 2: 运行集成测试**
+- [x] **Step 2: 运行集成测试**
 
 Run: `go test ./internal/dal/ -tags=integration -v -run 'TestUpsertJobOnConflict|TestCompletedToursJSONB|TestSoftDeleteAllowsReinsert|TestResourceTypeScanFromSmallint'`
 Expected: 4 个测试全部 PASS
 
 如果 `TestUpsertJobOnConflict` 报 `there is no unique or exclusion constraint matching the ON CONFLICT specification`，说明 `sys_cron_job` 的 `idx_name` 唯一索引没建上，回到 Task 3 检查。
 
-- [ ] **Step 3: 确认默认测试套件未被影响**
+- [x] **Step 3: 确认默认测试套件未被影响**
 
 Run: `go test ./...`
 Expected: 全部 PASS，且 `internal/dal` 不尝试连接 PG（integration 标签未启用）
 
-- [ ] **Step 4: 启动服务做一次真实冒烟**
+- [x] **Step 4: 启动服务做一次真实冒烟**
 
 ```bash
 docker compose -f deploy/docker/docker-compose.yaml up -d
@@ -1086,6 +1110,24 @@ go run ./cmd/server
 Expected: 启动日志无数据库错误。cron 模块在启动时会 `UpsertJob` 注册任务，能起来就说明 PG 写入通路正常。确认后 Ctrl-C 退出。
 
 **Task 6 完成。** 变更文件：`internal/dal/postgres_integration_test.go`（新建）。交由用户手动提交，不要执行任何 git 命令。
+
+> **实际实现与计划的差异（因 Task 4 之后又做了一轮 DDL 优化）：**
+>
+> - 用例从 4 个扩到 9 个，补上了部分唯一索引、CHECK 约束、`last_status` 可空
+>   这三类新行为的覆盖。
+> - **去掉了 `NamingStrategy`。** 计划里给测试的 `gorm.Open` 配了
+>   `TablePrefix: "sys_"`，但 gen 生成的 model 已通过 `TableName()` 固定表名，
+>   再加前缀会让手写的 `db.Exec("... sys_user ...")` 与生成代码看到不同的表。
+> - **CHECK 约束的断言需要两个连接。** driver v1.6.0 的
+>   `error_translator.go` 把 23514 统一翻译成 `gorm.ErrCheckConstraintViolated`，
+>   消息只剩 "violates check constraint"，约束名丢失。所以用应用同款配置
+>   （`TranslateError: true`）断言哨兵错误，另开一个不翻译的连接断言
+>   `pgconn.PgError.ConstraintName`，两边都验。
+> - Step 4 的冒烟：`go run ./cmd/server` 会先因 `jwt.secret` 为空而 panic，
+>   与迁移无关。临时在 `configs/dev.yaml` 注入 secret 后启动成功，
+>   cron 注册的 `server_status` 任务确实写入了 PG（`last_status` 为 NULL），
+>   验证完已还原配置。注意 `configs/config.local.yaml` 虽在 .gitignore 里，
+>   但 `viper.go` 只读 `default` 和 `dev`，那个文件从未被加载。
 
 ---
 
@@ -1099,7 +1141,7 @@ Expected: 启动日志无数据库错误。cron 模块在启动时会 `UpsertJob
 - Consumes: 前六个任务的全部改动
 - Produces: 仓库中不再有 MySQL 引用（除本计划文档本身）
 
-- [ ] **Step 1: 全仓检索残留**
+- [x] **Step 1: 全仓检索残留**
 
 注意检索范围**不含 `go.mod` / `go.sum`** —— 那里的两条 mysql `// indirect` 条目是 `gorm.io/gen` 的传递依赖，属于预期状态，见 Global Constraints。
 
@@ -1113,7 +1155,7 @@ grep -rn -i "mysql\|utf8mb4\|innodb\|3306" \
 
 Expected: 无输出。若有命中，逐个改掉（注释、文档措辞等）。
 
-- [ ] **Step 2: 确认项目自身代码不再 import mysql driver**
+- [x] **Step 2: 确认项目自身代码不再 import mysql driver**
 
 只检查项目自己的包。**不要**用 `go list -deps ./... | grep mysql` 断言"无 mysql" —— 那条断言是错的，见下方说明。
 
@@ -1125,7 +1167,7 @@ Expected: `✓ 项目代码中无 mysql driver import`
 
 **为什么依赖图里一定还有 mysql（Task 1 执行时实测确认）：** 见 Global Constraints 中的完整链条 —— 根因是 `internal/dal/query/*.gen.go` import `gorm.io/gen`，而 gen 自身依赖 `datatypes` → `driver/mysql`。这是 gorm gen query 模式的固有结果，无法在本次迁移范围内消除，也不影响正确性。
 
-- [ ] **Step 3: 给 CI 加 postgres 服务**
+- [x] **Step 3: 给 CI 加 postgres 服务**
 
 当前 `.github/workflows/test.yml` 只跑 `go test ./...` 和 `go build ./...`，不连数据库，所以默认套件不需要 PG。但加上 service 容器后可以顺带跑集成测试，防止 DDL 与代码漂移。把 `jobs.test.steps` 之前插入 `services`，并追加一个 step：
 
@@ -1193,12 +1235,12 @@ jobs:
 
 三个 seed 步骤的顺序是强制的：003 的两条 `INSERT ... SELECT` 依赖 `sys_role` 中已有 `admin` 与 `user`，角色缺失时不会报错，只会静默插入 0 行，随后 `TestSoftDeleteAllowsReinsert` 会因取不到 roleID 而失败。
 
-- [ ] **Step 4: 本地校验 workflow 语法**
+- [x] **Step 4: 本地校验 workflow 语法**
 
 Run: `python3 -c "import yaml,sys; yaml.safe_load(open('.github/workflows/test.yml')); print('yaml ok')"`
 Expected: `yaml ok`
 
-- [ ] **Step 5: 确认最终状态**
+- [x] **Step 5: 确认最终状态**
 
 ```bash
 go build ./... && go test ./...
@@ -1207,7 +1249,17 @@ go test ./internal/dal/ -tags=integration
 
 Expected: 全部 PASS
 
-**Task 7 完成。** 变更文件：`.github/workflows/test.yml`，以及 Step 1 检索出的任何残留文件。交由用户手动提交，不要执行任何 git 命令。
+**Task 7 完成。** 变更文件：`.github/workflows/test.yml`。交由用户手动提交，不要执行任何 git 命令。
+
+> Step 1 的检索有 4 处命中，全部是解释性注释（说明为何这样写、与 MySQL 的差异），
+> 分别在 `migrations/002`、`migrations/README.md`(2 处)、
+> `internal/dal/postgres_integration_test.go`，属有意保留的文档，未改。
+>
+> Seed 角色的 SQL 已简化：时间列现在有 `DEFAULT NOW()`，不必再显式传
+> `created_at/updated_at/deleted_at`。
+>
+> Step 4 的 `python3 -c "import yaml"` 在本机不可用（无 PyYAML），改用 ruby 的
+> `YAML.load_file` 校验，结构正确。
 
 ---
 
@@ -1215,16 +1267,62 @@ Expected: 全部 PASS
 
 全部任务完成后逐项确认：
 
-- [ ] `go build ./...` 通过
-- [ ] `go test ./...` 全绿
-- [ ] `go test ./internal/dal/ -tags=integration` 全绿
-- [ ] `go list -m gorm.io/gorm gorm.io/driver/postgres gorm.io/gen github.com/jackc/pgx/v5` 输出 v1.31.2 / v1.6.0 / v0.3.28 / v5.10.0
-- [ ] `grep -rn "driver/mysql\|go-sql-driver" --include="*.go" .` 无输出（项目代码不再 import）
-- [ ] `go.mod` 中两条 mysql 条目带 `// indirect`（预期状态，非遗漏；`gorm.io/datatypes` 传递依赖，无法消除）
-- [ ] `grep -ri mysql --include="*.go" .` 无输出
-- [ ] `go run ./cmd/server` 能启动，cron 任务注册成功
-- [ ] 从空库执行 `migrations/0*.sql` 能完整建起 7 张表 + seed
-- [ ] `pkg/etcd/balancer.go:25` 的 `uint64` 取模逻辑未被误改
+- [x] `go build ./...` 通过
+- [x] `go test ./...` 全绿
+- [x] `go test ./internal/dal/ -tags=integration` 全绿
+- [x] `go list -m gorm.io/gorm gorm.io/driver/postgres gorm.io/gen github.com/jackc/pgx/v5` 输出 v1.31.2 / v1.6.0 / v0.3.28 / v5.10.0
+- [x] `grep -rn "driver/mysql\|go-sql-driver" --include="*.go" .` 无输出（项目代码不再 import）
+- [x] `go.mod` 中两条 mysql 条目带 `// indirect`（预期状态，非遗漏；`gorm.io/datatypes` 传递依赖，无法消除）
+- [x] `grep -ri mysql --include="*.go" .` 无输出
+- [x] `go run ./cmd/server` 能启动，cron 任务注册成功
+- [x] 从空库执行 `migrations/0*.sql` 能完整建起 7 张表 + seed
+- [x] `pkg/etcd/balancer.go:25` 的 `uint64` 取模逻辑未被误改
+
+## 计划外追加：DDL 充分利用 PG 特性（Task 4 之后执行）
+
+原计划只做"MySQL 语法 → 可用的 PG 语法"的最小转换。转换完成后又做了一轮优化，
+目标是用上 PG 独有的能力并修掉两个从 MySQL 时代继承下来的缺陷。
+
+**修掉的两个实际缺陷：**
+
+1. **软删除后唯一键永久占用。** `deleted_at` 是毫秒时间戳而非 NULL，软删除后行仍在表里，
+   普通唯一索引会让被软删的 username/code 永远无法重新使用（实测软删后重新注册同名
+   用户直接报 `duplicate key`）。改为部分唯一索引 `WHERE deleted_at = 0` 解决。
+2. **`idx_email` 拦住第二个空邮箱用户。** `email` 是 `NOT NULL DEFAULT ''` 且唯一，
+   两个不填邮箱的用户直接冲突。索引谓词加上 `AND email <> ''` 解决。
+
+**用上的 PG 特性：**
+
+- 部分唯一索引替代"把 `deleted_at` 塞进联合唯一索引"的 MySQL workaround
+  （`uk_user_role`、`uk_role_perm`），语义更准且索引更小。
+- `CHECK` 约束表达枚举语义，共 5 条。**没有用原生 `CREATE TYPE ... AS ENUM`**：
+  原生 enum 的值只能加不能删，且 gen 反向生成时自定义类型会落到 pgx 的 default
+  分支退化成 `string`，需要额外的 `FieldType` 覆盖；`CHECK` 完全不影响 gen 的
+  类型推断，改约束也不需要重新生成 DAL。
+- `BIGINT GENERATED ALWAYS AS IDENTITY` 替代 `BIGSERIAL`（SQL 标准写法，
+  避免 SERIAL 的序列所有权与权限问题）。gen 仍正确识别为 `autoIncrement`。
+- 时间列补 `DEFAULT NOW()`，方便手写 SQL；GORM 侧行为不变（每次插入都显式赋值）。
+- `last_status` 改为可空 + `*string`，用 NULL 而非空串表达"从未执行"。
+
+**连带的代码改动：**
+
+- `UpsertJob` 必须补 `clause.OnConflict.TargetWhere`。PG 要求 `ON CONFLICT` 的推断
+  谓词与部分索引的谓词匹配，否则报
+  `there is no unique or exclusion constraint matching the ON CONFLICT specification`。
+  GORM 的 `clause.OnConflict` 有 `TargetWhere` 字段支持这一点。
+- `003` seed 的 `action` 从 `'access'` 改为 `'read'`。原值不在
+  `PermissionAction` 常量里，新增的 `ck_permission_action` 会拒掉全部 20 行 seed。
+- `resp/cron_job.go` 的 `LastStatus` 随模型改为 `*string`
+  —— **这是 API 破坏性变更**，未执行过的任务其 `last_status` 的 JSON 值
+  由 `""` 变为 `null`，前端若消费该字段需同步调整。
+
+**一处需要更正的判断：** 新增的复合索引
+`idx_execution_job_name_id (job_name, id DESC)` 并不能像最初设想那样消掉
+`ListExecutions` 的 Sort。实测 `LIMIT 20 OFFSET 0` 时 planner 宁可倒扫主键加
+Filter（即便要滤掉 20000 行、读 325 个 buffer，强制走复合索引只需 3 个），
+因为 `LIMIT` 小的时候它会低估倒扫成本；而深分页（`OFFSET 400`）时虽然会选上该索引，
+却因走 Bitmap Index Scan 又重新引入了 Sort。这个索引的实际价值是兜住深分页与
+日志表膨胀后的场景，首页那一屏不生效。
 
 ## 未包含的范围
 

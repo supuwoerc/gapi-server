@@ -48,4 +48,4 @@ configs/config.local.yaml
 .sisyphus/
 /.opencode-router/
 /.claude/
-/.codegraph/.gitignore
+/.codegraph/
