@@ -1,5 +1,5 @@
 -- 定时任务注册表
-CREATE TABLE sys_cron_job
+CREATE TABLE IF NOT EXISTS sys_cron_job
 (
     id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name        VARCHAR(128) NOT NULL,
@@ -28,7 +28,7 @@ COMMENT ON COLUMN sys_cron_job.last_run_at IS '最近一次执行时间';
 COMMENT ON COLUMN sys_cron_job.last_status IS '最近一次执行状态, NULL 表示从未执行';
 
 -- 执行日志表
-CREATE TABLE sys_cron_job_execution
+CREATE TABLE IF NOT EXISTS sys_cron_job_execution
 (
     id           BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     job_name     VARCHAR(128) NOT NULL,

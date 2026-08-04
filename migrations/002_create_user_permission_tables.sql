@@ -1,5 +1,5 @@
 -- 用户表
-CREATE TABLE sys_user
+CREATE TABLE IF NOT EXISTS sys_user
 (
     id               BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     username         VARCHAR(64)  NOT NULL,
@@ -38,7 +38,7 @@ COMMENT ON COLUMN sys_user.locked_until IS '锁定截止时间';
 COMMENT ON COLUMN sys_user.completed_tours IS '已完成的引导';
 
 -- 角色表
-CREATE TABLE sys_role
+CREATE TABLE IF NOT EXISTS sys_role
 (
     id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name        VARCHAR(64)  NOT NULL,
@@ -65,7 +65,7 @@ COMMENT ON COLUMN sys_role.sort_order IS '排序';
 COMMENT ON COLUMN sys_role.enabled IS '是否启用';
 
 -- 权限表
-CREATE TABLE sys_permission
+CREATE TABLE IF NOT EXISTS sys_permission
 (
     id            BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     code          VARCHAR(128) NOT NULL,
@@ -98,7 +98,7 @@ COMMENT ON COLUMN sys_permission.action IS '操作 create/read/update/delete';
 COMMENT ON COLUMN sys_permission.description IS '权限描述';
 
 -- 用户角色关联表
-CREATE TABLE sys_user_role
+CREATE TABLE IF NOT EXISTS sys_user_role
 (
     id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id    BIGINT      NOT NULL,
@@ -119,7 +119,7 @@ COMMENT ON COLUMN sys_user_role.user_id IS '用户ID';
 COMMENT ON COLUMN sys_user_role.role_id IS '角色ID';
 
 -- 角色权限关联表
-CREATE TABLE sys_role_permission
+CREATE TABLE IF NOT EXISTS sys_role_permission
 (
     id            BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     role_id       BIGINT      NOT NULL,
