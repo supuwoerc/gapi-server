@@ -2,10 +2,10 @@ package resp
 
 // UserInfo 登录用户信息
 type UserInfo struct {
-	Name   string `json:"name"`
-	Email  string `json:"email"`
-	Avatar string `json:"avatar"`
-	Bio    string `json:"bio"`
+	Name   string  `json:"name"`
+	Email  string  `json:"email"`
+	Avatar *string `json:"avatar"`
+	Bio    *string `json:"bio"`
 }
 
 // LoginResponse 登录响应 — 与前端 loginUserSchema 对齐

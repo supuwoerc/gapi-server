@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS sys_cron_job
 (
     id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name        VARCHAR(128) NOT NULL,
-    description VARCHAR(512) NOT NULL DEFAULT '',
+    description VARCHAR(512) NULL,
     "interval"  VARCHAR(64)  NOT NULL,
     enabled     BOOLEAN      NOT NULL DEFAULT TRUE,
     last_run_at TIMESTAMPTZ,
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS sys_cron_job_execution
     started_at   TIMESTAMPTZ  NOT NULL,
     ended_at     TIMESTAMPTZ,
     duration     BIGINT,
-    error        TEXT         NOT NULL,
+    error        TEXT         NULL,
     triggered_by VARCHAR(32)  NOT NULL DEFAULT 'scheduler',
     created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),

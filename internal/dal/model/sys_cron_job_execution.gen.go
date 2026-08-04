@@ -20,7 +20,7 @@ type CronJobExecution struct {
 	StartedAt   time.Time             `gorm:"column:started_at;type:timestamp with time zone;not null;comment:开始时间" json:"started_at"`                                      // 开始时间
 	EndedAt     *time.Time            `gorm:"column:ended_at;type:timestamp with time zone;comment:结束时间" json:"ended_at"`                                                   // 结束时间
 	Duration    *int64                `gorm:"column:duration;type:bigint;comment:耗时（毫秒）" json:"duration"`                                                                   // 耗时（毫秒）
-	Error       string                `gorm:"column:error;type:text;not null;comment:错误信息" json:"error"`                                                                    // 错误信息
+	Error       *string               `gorm:"column:error;type:text;comment:错误信息" json:"error"`                                                                             // 错误信息
 	TriggeredBy TriggeredBy           `gorm:"column:triggered_by;type:character varying(32);not null;default:scheduler;comment:触发方式(scheduler/manual)" json:"triggered_by"` // 触发方式(scheduler/manual)
 	CreatedAt   time.Time             `gorm:"column:created_at;type:timestamp with time zone;not null;default:now()" json:"created_at"`
 	UpdatedAt   time.Time             `gorm:"column:updated_at;type:timestamp with time zone;not null;default:now()" json:"updated_at"`

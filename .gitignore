@@ -49,3 +49,10 @@ configs/config.local.yaml
 /.opencode-router/
 /.claude/
 /.codegraph/
+/.mcp.json
+/AGENTS.md
+/GEMINI.md
+/.cursor/mcp.json
+/.kiro/settings/mcp.json
+/opencode.jsonc
+/.gemini/settings.json

@@ -16,7 +16,7 @@ const TableNameCronJob = "sys_cron_job"
 type CronJob struct {
 	ID          int64                 `gorm:"column:id;type:bigint;primaryKey;autoIncrement:true" json:"id"`
 	Name        string                `gorm:"column:name;type:character varying(128);not null;uniqueIndex:idx_cron_job_name,priority:1;comment:任务唯一标识" json:"name"` // 任务唯一标识
-	Description string                `gorm:"column:description;type:character varying(512);not null;comment:任务描述" json:"description"`                              // 任务描述
+	Description *string               `gorm:"column:description;type:character varying(512);comment:任务描述" json:"description"`                                       // 任务描述
 	Interval    string                `gorm:"column:interval;type:character varying(64);not null;comment:cron 表达式（6位含秒）" json:"interval"`                           // cron 表达式（6位含秒）
 	Enabled     bool                  `gorm:"column:enabled;type:boolean;not null;default:true;comment:是否启用" json:"enabled"`                                        // 是否启用
 	LastRunAt   *time.Time            `gorm:"column:last_run_at;type:timestamp with time zone;comment:最近一次执行时间" json:"last_run_at"`                                 // 最近一次执行时间

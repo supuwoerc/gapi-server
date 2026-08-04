@@ -9,7 +9,7 @@ import (
 type CronJobItem struct {
 	ID          int64      `json:"id"`
 	Name        string     `json:"name"`
-	Description string     `json:"description"`
+	Description *string    `json:"description"`
 	Interval    string     `json:"interval"`
 	Enabled     bool       `json:"enabled"`
 	LastRunAt   *time.Time `json:"last_run_at"`
@@ -47,7 +47,7 @@ type CronJobExecutionItem struct {
 	StartedAt   time.Time  `json:"started_at"`
 	EndedAt     *time.Time `json:"ended_at"`
 	Duration    *int64     `json:"duration"`
-	Error       string     `json:"error"`
+	Error       *string    `json:"error"`
 	TriggeredBy string     `json:"triggered_by"`
 	CreatedAt   time.Time  `json:"created_at"`
 }

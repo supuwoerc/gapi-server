@@ -4,10 +4,10 @@ CREATE TABLE IF NOT EXISTS sys_user
     id               BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     username         VARCHAR(64)  NOT NULL,
     password_hash    VARCHAR(256) NOT NULL,
-    email            VARCHAR(128) NOT NULL DEFAULT '',
-    phone            VARCHAR(32)  NOT NULL DEFAULT '',
-    avatar           VARCHAR(512) NOT NULL DEFAULT '',
-    bio              VARCHAR(256) NOT NULL DEFAULT '',
+    email            VARCHAR(128) NOT NULL,
+    phone            VARCHAR(32)  NULL,
+    avatar           VARCHAR(512) NULL,
+    bio              VARCHAR(256) NULL,
     enabled          BOOLEAN      NOT NULL DEFAULT TRUE,
     last_login_at    TIMESTAMPTZ,
     login_fail_count INT          NOT NULL DEFAULT 0,
@@ -20,8 +20,8 @@ CREATE TABLE IF NOT EXISTS sys_user
 
 -- 部分唯一索引: 软删除的行不再占用 username/email
 CREATE UNIQUE INDEX idx_user_username ON sys_user (username) WHERE deleted_at = 0;
--- email 允许为空串(未填写), 空串不参与唯一性判定, 否则第二个不填邮箱的用户会冲突
-CREATE UNIQUE INDEX idx_user_email ON sys_user (email) WHERE deleted_at = 0 AND email <> '';
+-- email 必填, 软删除后允许复用
+CREATE UNIQUE INDEX idx_user_email ON sys_user (email) WHERE deleted_at = 0;
 CREATE INDEX idx_user_deleted_at ON sys_user (deleted_at);
 
 COMMENT ON TABLE sys_user IS '用户表';
@@ -43,8 +43,8 @@ CREATE TABLE IF NOT EXISTS sys_role
     id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name        VARCHAR(64)  NOT NULL,
     code        VARCHAR(64)  NOT NULL,
-    parent_id   BIGINT,
-    description VARCHAR(256) NOT NULL DEFAULT '',
+    parent_id   BIGINT       NULL,
+    description VARCHAR(256) NULL,
     sort_order  INT          NOT NULL DEFAULT 0,
     enabled     BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),

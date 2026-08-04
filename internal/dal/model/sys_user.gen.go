@@ -19,9 +19,9 @@ type User struct {
 	Username       string                      `gorm:"column:username;type:character varying(64);not null;uniqueIndex:idx_user_username,priority:1;comment:登录名" json:"username"` // 登录名
 	PasswordHash   string                      `gorm:"column:password_hash;type:character varying(256);not null;comment:密码哈希" json:"-"`                                          // 密码哈希
 	Email          string                      `gorm:"column:email;type:character varying(128);not null;uniqueIndex:idx_user_email,priority:1;comment:邮箱" json:"email"`          // 邮箱
-	Phone          string                      `gorm:"column:phone;type:character varying(32);not null;comment:手机号" json:"phone"`                                                // 手机号
-	Avatar         string                      `gorm:"column:avatar;type:character varying(512);not null;comment:头像URL" json:"avatar"`                                           // 头像URL
-	Bio            string                      `gorm:"column:bio;type:character varying(256);not null;comment:个人简介" json:"bio"`                                                  // 个人简介
+	Phone          *string                     `gorm:"column:phone;type:character varying(32);comment:手机号" json:"phone"`                                                         // 手机号
+	Avatar         *string                     `gorm:"column:avatar;type:character varying(512);comment:头像URL" json:"avatar"`                                                    // 头像URL
+	Bio            *string                     `gorm:"column:bio;type:character varying(256);comment:个人简介" json:"bio"`                                                           // 个人简介
 	Enabled        bool                        `gorm:"column:enabled;type:boolean;not null;default:true;comment:是否启用" json:"enabled"`                                            // 是否启用
 	LastLoginAt    *time.Time                  `gorm:"column:last_login_at;type:timestamp with time zone;comment:最近登录时间" json:"last_login_at"`                                   // 最近登录时间
 	LoginFailCount int32                       `gorm:"column:login_fail_count;type:integer;not null;comment:连续登录失败次数" json:"login_fail_count"`                                   // 连续登录失败次数

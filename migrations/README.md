@@ -4,9 +4,12 @@
 
 ## 首次初始化
 
-脚本**不是幂等的**，仅用于空库首次初始化。重复执行会在 `CREATE TABLE` 处报
-`relation "..." already exists` 并中断（`ON_ERROR_STOP=1` 下会明确失败，不会静默出错）。
-需要重来时先重建库或 `DROP TABLE`，不要在已有结构的库上重跑。
+脚本按序号执行，整段流程等价于「重置」：`000_clean.sql` 会先 DROP 全部表，
+随后 001/002 建表、003 补种子数据。**在已有数据的库上执行会清空全部数据**，
+仅适用于空库或可丢弃的开发库，不要对存有数据的库执行。
+
+此前"重跑会在 `CREATE TABLE` 处报错中断"的行为已不存在——000 会先清掉旧表，
+整段重跑会静默成功。需要重置时直接整段重跑即可。
 
 ```bash
 docker compose -f deploy/docker/docker-compose.yaml up -d postgres
@@ -45,9 +48,9 @@ docker exec gapi-postgres psql -U postgres -d gapi -c \
   code 永久无法重新使用。关联表的联合唯一索引同理，用
   `(user_id, role_id) WHERE deleted_at = 0`，不要把 `deleted_at` 塞进索引列
   （那是 MySQL 没有部分索引时的 workaround，语义上拦不住同一组合软删多次）。
-- 允许空串的列若要唯一，需把空串一并排除，如
-  `idx_user_email ... WHERE deleted_at = 0 AND email <> ''`，
-  否则第二个不填邮箱的用户会撞唯一约束。
+- 允许空串的列若要建唯一索引，需把空串一并排除（形如
+  `WHERE deleted_at = 0 AND email <> ''`），否则空串之间会互相撞唯一约束。
+  当前 `sys_user.email` 已是必填列，其唯一索引只需 `WHERE deleted_at = 0`。
 - 枚举语义的列用 `CHECK` 约束而非原生 `ENUM` 类型：原生 enum 的值只能加不能删，
   且 gen 反向生成时会退化成 `string`；`CHECK` 则完全不影响 gen 的类型推断，
   改约束也不需要重新生成 DAL。取值来源见 `internal/dal/model/` 下的枚举定义

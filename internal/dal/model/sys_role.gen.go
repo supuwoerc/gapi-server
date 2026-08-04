@@ -18,7 +18,7 @@ type Role struct {
 	Name        string                `gorm:"column:name;type:character varying(64);not null;comment:角色显示名称" json:"name"`                                      // 角色显示名称
 	Code        string                `gorm:"column:code;type:character varying(64);not null;uniqueIndex:idx_role_code,priority:1;comment:角色唯一标识" json:"code"` // 角色唯一标识
 	ParentID    *int64                `gorm:"column:parent_id;type:bigint;index:idx_role_parent_id,priority:1;comment:父角色ID" json:"parent_id"`                 // 父角色ID
-	Description string                `gorm:"column:description;type:character varying(256);not null;comment:角色描述" json:"description"`                         // 角色描述
+	Description *string               `gorm:"column:description;type:character varying(256);comment:角色描述" json:"description"`                                  // 角色描述
 	SortOrder   int32                 `gorm:"column:sort_order;type:integer;not null;comment:排序" json:"sort_order"`                                            // 排序
 	Enabled     bool                  `gorm:"column:enabled;type:boolean;not null;default:true;comment:是否启用" json:"enabled"`                                   // 是否启用
 	CreatedAt   time.Time             `gorm:"column:created_at;type:timestamp with time zone;not null;default:now()" json:"created_at"`
