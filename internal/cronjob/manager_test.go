@@ -9,6 +9,7 @@ import (
 	"github.com/supuwoerc/gapi-server/internal/config"
 	"github.com/supuwoerc/gapi-server/internal/dal/model"
 	"github.com/supuwoerc/gapi-server/pkg/etcd"
+	"github.com/supuwoerc/gapi-server/pkg/logger"
 
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
@@ -52,6 +53,18 @@ func (j *countingJob) Handle(_ context.Context) error {
 	return nil
 }
 
+// mockLogger 用 *zap.Logger 实现 Logger 接口, Ctx 附加 ctx 中的 trace id。
+type mockLogger struct {
+	*zap.Logger
+}
+
+func (m *mockLogger) Ctx(ctx context.Context) *zap.Logger {
+	if traceID := logger.TraceIDFromContext(ctx); traceID != "" {
+		return m.Logger.With(zap.String(string(logger.TraceIDKey), traceID))
+	}
+	return m.Logger
+}
+
 type ManagerSuite struct {
 	suite.Suite
 }
@@ -59,7 +72,7 @@ type ManagerSuite struct {
 func (s *ManagerSuite) newManager(locker DistLocker, job *countingJob) *JobManager {
 	l, _ := zap.NewDevelopment()
 	cfg := &config.CronConfig{Enabled: true, ShutdownTimeout: 5}
-	return NewJobManager(l, &mockRecorder{}, cfg, []SystemJob{job}, locker)
+	return NewJobManager(&mockLogger{Logger: l}, &mockRecorder{}, cfg, []SystemJob{job}, locker)
 }
 
 func (s *ManagerSuite) TestExecutesWhenLockAcquired() {
@@ -70,7 +83,7 @@ func (s *ManagerSuite) TestExecutesWhenLockAcquired() {
 	s.Require().NoError(err)
 
 	time.Sleep(2 * time.Second)
-	mgr.Stop()
+	mgr.Stop(context.Background())
 
 	s.Greater(job.count.Load(), int64(0))
 }
@@ -83,7 +96,7 @@ func (s *ManagerSuite) TestSkipsWhenLockFailed() {
 	s.Require().NoError(err)
 
 	time.Sleep(2 * time.Second)
-	mgr.Stop()
+	mgr.Stop(context.Background())
 
 	s.Equal(int64(0), job.count.Load())
 }
@@ -96,7 +109,7 @@ func (s *ManagerSuite) TestNilLockerExecutesNormally() {
 	s.Require().NoError(err)
 
 	time.Sleep(2 * time.Second)
-	mgr.Stop()
+	mgr.Stop(context.Background())
 
 	s.Greater(job.count.Load(), int64(0))
 }

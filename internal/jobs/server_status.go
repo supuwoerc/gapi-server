@@ -32,10 +32,10 @@ func (j *ServerStatusJob) ExecutionMode() cronjob.ExecutionMode {
 	return cronjob.ModeSkipIfRunning
 }
 
-func (j *ServerStatusJob) Handle(_ context.Context) error {
+func (j *ServerStatusJob) Handle(ctx context.Context) error {
 	var mem runtime.MemStats
 	runtime.ReadMemStats(&mem)
-	j.logger.Info("server status",
+	j.logger.Ctx(ctx).Info("server status",
 		zap.Int("goroutines", runtime.NumGoroutine()),
 		zap.Uint64("alloc_mb", mem.Alloc/1024/1024),
 		zap.Uint64("sys_mb", mem.Sys/1024/1024),

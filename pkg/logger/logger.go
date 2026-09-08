@@ -2,6 +2,8 @@ package logger
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -18,6 +20,27 @@ import (
 type ContextKey string
 
 const TraceIDKey ContextKey = "trace_id"
+
+// GenerateTraceID 生成一个随机的 trace id。
+func GenerateTraceID() string {
+	var buf [16]byte
+	_, _ = rand.Read(buf[:])
+	return hex.EncodeToString(buf[:])
+}
+
+// WithTraceID 将 trace id 写入 ctx。
+func WithTraceID(ctx context.Context, traceID string) context.Context {
+	return context.WithValue(ctx, TraceIDKey, traceID)
+}
+
+// TraceIDFromContext 从 ctx 中读取 trace id, 不存在时返回空字符串。
+func TraceIDFromContext(ctx context.Context) string {
+	if ctx == nil {
+		return ""
+	}
+	traceID, _ := ctx.Value(TraceIDKey).(string)
+	return traceID
+}
 
 type Logger struct {
 	*zap.Logger

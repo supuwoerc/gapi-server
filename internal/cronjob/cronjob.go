@@ -33,7 +33,9 @@ const (
 var ErrJobRunning = errors.New("job is currently running")
 
 // Logger 日志接口，解耦对具体 logger 实现的依赖。
+// Ctx 返回携带 ctx 中 trace 信息的 logger, 有 ctx 的场景优先使用它。
 type Logger interface {
+	Ctx(ctx context.Context) *zap.Logger
 	Info(msg string, fields ...zap.Field)
 	Debug(msg string, fields ...zap.Field)
 	Warn(msg string, fields ...zap.Field)

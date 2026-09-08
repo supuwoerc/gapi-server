@@ -1,10 +1,6 @@
 package middleware
 
 import (
-	"context"
-	"crypto/rand"
-	"encoding/hex"
-
 	"github.com/supuwoerc/gapi-server/pkg/logger"
 
 	"github.com/gin-gonic/gin"
@@ -16,17 +12,10 @@ func Trace() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		traceID := c.GetHeader(traceIDHeader)
 		if traceID == "" {
-			traceID = generateTraceID()
+			traceID = logger.GenerateTraceID()
 		}
-		ctx := context.WithValue(c.Request.Context(), logger.TraceIDKey, traceID)
-		c.Request = c.Request.WithContext(ctx)
+		c.Request = c.Request.WithContext(logger.WithTraceID(c.Request.Context(), traceID))
 		c.Header(traceIDHeader, traceID)
 		c.Next()
 	}
-}
-
-func generateTraceID() string {
-	var buf [16]byte
-	_, _ = rand.Read(buf[:])
-	return hex.EncodeToString(buf[:])
 }
