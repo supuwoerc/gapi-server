@@ -1,29 +1,17 @@
 package model
 
-import (
-	"database/sql/driver"
-	"fmt"
-)
+import "database/sql/driver"
 
+// TriggeredBy 定时任务的触发方式，存进 sys_cron_job_execution.triggered_by
+// （VARCHAR(32)，CHECK IN ('scheduler','manual')）。
+// 常量值即落库值，改拼写要同步 migrations 里的 CHECK。
 type TriggeredBy string
-
-func (i *TriggeredBy) Scan(src any) error {
-	switch v := src.(type) {
-	case string:
-		*i = TriggeredBy(v)
-	case []byte:
-		*i = TriggeredBy(v)
-	default:
-		return fmt.Errorf("cannot scan %T into TriggeredBy", src)
-	}
-	return nil
-}
-
-func (i TriggeredBy) Value() (driver.Value, error) {
-	return string(i), nil
-}
 
 const (
 	TriggeredByScheduler TriggeredBy = "scheduler"
 	TriggeredByManual    TriggeredBy = "manual"
 )
+
+func (i *TriggeredBy) Scan(src any) error          { return enumStringFromDB(i, src) }
+func (i TriggeredBy) Value() (driver.Value, error) { return enumStringIntoDB(i) }
+func (i TriggeredBy) Text() string                 { return enumStringText(i) }

@@ -18,6 +18,7 @@ import (
 	"github.com/supuwoerc/gapi-server/internal/dal/query"
 
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/postgres"
@@ -78,15 +79,16 @@ func TestUpsertJobOnConflict(t *testing.T) {
 	})
 
 	require.NoError(t, d.UpsertJob(ctx, &model.CronJob{
-		Name: name, Description: "first", Interval: "0 0 * * * *",
+		Name: name, Description: lo.ToPtr("first"), Interval: "0 0 * * * *",
 	}))
 	require.NoError(t, d.UpsertJob(ctx, &model.CronJob{
-		Name: name, Description: "second", Interval: "0 30 * * * *",
+		Name: name, Description: lo.ToPtr("second"), Interval: "0 30 * * * *",
 	}))
 
 	got, err := d.FindByName(ctx, name)
 	require.NoError(t, err)
-	assert.Equal(t, "second", got.Description)
+	require.NotNil(t, got.Description)
+	assert.Equal(t, "second", *got.Description)
 	assert.Equal(t, "0 30 * * * *", got.Interval)
 	require.NotZero(t, got.ID, "IDENTITY 应回填主键")
 
