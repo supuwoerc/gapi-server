@@ -19,5 +19,7 @@
   {"id": "captchaExpired", "other": "Captcha expired, please request a new one"},
   {"id": "captchaTokenInvalid", "other": "Captcha token is invalid"},
   {"id": "tourIDInvalid", "other": "Invalid tour ID"},
-  {"id": "tourLimitExceeded", "other": "Completed tours limit exceeded"}
+  {"id": "tourLimitExceeded", "other": "Completed tours limit exceeded"},
+  {"id": "activationCodeInvalid", "other": "Email verification code is invalid or expired"},
+  {"id": "activationCodeSendTooFrequent", "other": "Verification code requested too frequently, please try again later"}
 ]
