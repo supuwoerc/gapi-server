@@ -4,7 +4,7 @@
 
 | 想知道什么 | 看哪里 |
 | --- | --- |
-| 自检闭环、代码生成、枚举、CLI 命令、测试、风格 | 本文件 |
+| 自检闭环、代码生成、并发与工具库、枚举、CLI 命令、测试、风格 | 本文件 |
 | 分层方向、ctx 规范、错误处理、加接口/任务/表的步骤 | **`internal/AGENTS.md`** |
 | 项目背景、怎么跑起来、配置与部署 | `README.md` |
 | 跨文件的架构脉络、已知且接受的缺陷 | `CLAUDE.md` |
@@ -73,6 +73,83 @@ go install github.com/swaggo/swag/cmd/swag@latest
 **只允许 import `internal/config`**。不要让 `pkg/` 碰 `internal/` 下的其他包。
 
 `internal/` 内部的分层规则见 `internal/AGENTS.md`。
+
+## 并发：用 conc，不手写 goroutine
+
+并发一律用 `github.com/sourcegraph/conc`，**不要手写 `go func()` + `sync.WaitGroup`**。
+理由不是"少写几行"，而是裸 goroutine 有两个必踩的坑，conc 已经替我们处理掉了：
+
+1. **子 goroutine 里 panic 会直接打挂整个进程**——`middleware.Recovery` 只护得住请求
+   那一个 goroutine，`go` 出去的救不回来。conc 的 `Go` 会 catch 住 panic，在 `Wait()`
+   时于**调用方的 goroutine** 里重新抛出，于是能被上层的 recover 接住。
+2. `wg.Add(1)` / `defer wg.Done()` 配对全靠人盯，漏一次就是永久阻塞或提前返回。
+
+按场景选，四个入口够覆盖全部需求：
+
+| 场景 | 用什么 |
+| --- | --- |
+| 几个不返回 error 的任务，等它们都结束 | `conc.WaitGroup` |
+| 一批任务、要收集 error、要限并发 | `pool.New().WithErrors().WithMaxGoroutines(n)` |
+| 同上且要传 ctx / 出错就取消其余任务 | `pool.New().WithContext(ctx).WithCancelOnError()` |
+| 对切片并行 map/foreach | `iter.Map` / `iter.MapErr` / `iter.ForEach` |
+
+```go
+// 等一组任务结束（panic 会在 Wait() 处重新抛出，不再打挂进程）
+var wg conc.WaitGroup
+for _, item := range items {
+	wg.Go(func() { s.handle(item) })
+}
+wg.Wait()
+
+// 要 error、要 ctx、要限并发：ctx 从上游传进来，不要在这里造
+p := pool.New().WithContext(ctx).WithCancelOnError().WithMaxGoroutines(8)
+for _, item := range items {
+	p.Go(func(ctx context.Context) error { return s.handle(ctx, item) })
+}
+if err := p.Wait(); err != nil {   // 只取第一个 error 用 WithFirstError()
+	s.Logger.Ctx(ctx).Error("批量处理失败", zap.Error(err))
+	return response.InternalError
+}
+```
+
+三条配套约束：
+
+- **ctx 规则照旧**：`WithContext(ctx)` 里的 ctx 必须是上游传进来的那个，
+  别在这里 `context.Background()`。活得比请求久的并发任务同样用
+  `context.WithoutCancel(ctx)`，见 `internal/AGENTS.md`。
+- **不要用 `lo/parallel` 与 `lo.Async*` 做并发**。功能上和 conc 重叠，但它们不限并发、
+  panic 语义也不一样，并发只留 conc 一个来源，省得两套心智模型。
+- **`conc` 目前在 `go.mod` 里是 indirect**（viper 的间接依赖）。第一次直接 import 后跑
+  `go mod tidy` 把它提为直接依赖，否则后续 tidy 可能把它清掉。
+
+`pkg/etcd/discovery.go` 的 `sync.WaitGroup`、`internal/server/server.go` 与
+`internal/cronjob/manager.go` 的裸 `go`（共 3 处）是 conc 引入之前的写法，
+**碰到时可以换，但不必专门去改**——`manager.go` 那处自己 recover 了 panic 并要写执行记录，
+换过去要连着落库逻辑一起验证，别顺手动。
+
+## 工具方法：先查 lo，别重复实现
+
+`github.com/samber/lo` 已经在用（`internal/service/user.go`、`internal/handler/v1/` 下几处）。
+**写切片 / map / 集合 / 指针的工具方法之前先确认 lo 里有没有**，有就直接用，
+不要在项目里再写一份，也不要新建 `pkg/utils` 这类口袋包（当前 `pkg/` 下没有，保持这样）。
+
+常用的一批：`Map` / `Filter` / `Reduce` / `Contains` / `ContainsBy` / `Uniq` / `UniqBy` /
+`GroupBy` / `KeyBy` / `Keys` / `Values` / `Find` / `SomeBy` / `EveryBy` / `Chunk` /
+`Flatten` / `Without` / `Intersect` / `Difference` / `ToPtr` / `FromPtr` / `Ternary`。
+不确定有没有就直接翻源码，比自己写快：
+
+```bash
+LO=$(go env GOMODCACHE)/github.com/samber/lo@v1.53.0
+grep -rh "^func " $LO/*.go | grep -v test | grep -i uniq   # 换成想找的能力
+```
+
+两个注意点：
+
+- **`lo.Ternary` 的两个分支都会求值**，不是短路的。分支里有函数调用、下标访问或指针
+  解引用时改用 `lo.TernaryF`（传 func），否则会白跑一次甚至 panic。
+  现有 `auth.go` / `user.go` 里那两处传的是纯值，安全。
+- `lo` 里也有 `Attempt`（重试）、`NewDebounce`、`NewThrottle` 等，同样优先复用；
+  但并发相关的 `lo/parallel`、`lo.Async*` 归 conc，见上一节。
 
 ## 落库的枚举
 
@@ -229,6 +306,8 @@ go vet -tags=integration ./internal/dal/         # 只检查能否编译，不�
 - 不重新手写落库枚举的 `Scan`/`Value`/`Text`，转发给 `enum.go`
 - **不重排整型落库枚举的常量值**，也不改字符串枚举的拼写
 - 不因为无关改动而全库 `gofmt -w .`
+- **不手写 `go func()` + `sync.WaitGroup`**，用 `conc`；并发不用 `lo/parallel` 与 `lo.Async*`
+- **不自己实现 `lo` 里已有的工具方法**，也不新建 `pkg/utils` 口袋包
 - 不在 `pkg/` 里 import `internal/` 业务包
 - 不在 handler 里直接调 dal，或让 dal 依赖 service
 - 不把数据库账号密码写进 `configs/{dev,prod}.yaml`（统一放 `default.yaml`）

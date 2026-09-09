@@ -2,7 +2,8 @@
 
 `internal/` 下的分层规则与写法。**改 `internal/` 里的代码前读完本文件。**
 
-全局约定（自检闭环、代码生成、枚举、CLI、测试、风格）在根目录 `AGENTS.md`，那些同样适用；
+全局约定（自检闭环、代码生成、并发与工具库、枚举、CLI、测试、风格）在根目录 `AGENTS.md`，
+那些同样适用；
 `internal/` 各包之间的架构脉络见 `CLAUDE.md`。本文件只写与分层、请求链路相关的部分。
 
 三条最容易踩的规则，赶时间就先看这三条：
@@ -118,6 +119,24 @@ go m.executeWithRecording(jobCtx, j, TriggerByManual)
 
 判断标准很简单：**这段逻辑会在响应返回后继续跑吗？** 会，才需要脱离请求 ctx；
 不会，就一路沿用同一个。
+
+上面这段裸 `go` 是 `manager.go` 的现状（它自己 recover 了 panic）。**新代码起并发用
+`conc`**，见根 `AGENTS.md` 的「并发：用 conc」——ctx 规则不变，
+`pool.New().WithContext(ctx)` 里的 ctx 仍要是上游传进来或由它派生的：
+
+```go
+// 对：ctx 从上游派生，并发交给 conc
+p := pool.New().WithContext(ctx).WithMaxGoroutines(8)
+for _, id := range ids {
+	p.Go(func(ctx context.Context) error { return s.Repo.Sync(ctx, id) })
+}
+if err := p.Wait(); err != nil { ... }
+```
+
+**并发写同一个事务要当心**：`TransactionManager.Transaction` 的 tx 挂在 ctx 上，
+把同一个带 tx 的 ctx 分给多个 goroutine 并发执行，等于并发复用一条
+`*gorm.DB` 连接——`pgx` 不支持这样用。事务里要么串行，要么先并发算好数据、
+再在事务内串行落库。
 
 **收尾的落库同理**：任务被取消后仍要写最终状态，那次写库得用
 `context.WithoutCancel(ctx)` 派生的 ctx，否则 ctx 已失效、状态写不进去

@@ -138,6 +138,21 @@ server 和 CLI 各有一套钩子接口，**别混用**：
 
 在同一个 `Transaction` 闭包里混用两类时要注意：GORM 那部分回滚了，Redis 那部分**不会**跟着回滚。
 
+### 并发库的现状
+
+约定是「并发一律用 `conc`」（见 `AGENTS.md`），但**代码里目前一处都没用**，两件事从单个文件看不出来：
+
+- **`github.com/sourcegraph/conc` 在 `go.mod` 里是 `// indirect`**，viper 带进来的。第一次直接 import 之后要跑 `go mod tidy` 把它提为直接依赖，否则后续 tidy 会把这行清掉、构建就断了。`samber/lo` 已经是直接依赖（5 处调用，都在 `internal/` 下）。
+- 早于该约定的裸并发共 3 处，形态各不相同，别当成同一类改：
+
+| 位置 | 形态 | 能不能换 |
+| --- | --- | --- |
+| `pkg/etcd/discovery.go` | `wg.Add(1)` / `go d.watch` / `wg.Wait()` 手工配对（67、96、187 行分散三处） | 可以，最接近 `conc.WaitGroup` 的场景 |
+| `internal/server/server.go` | `go func(){ ListenAndServe }` + `go s.invokeOnReady()` | 不必换，进程级常驻，不存在"等它结束" |
+| `internal/cronjob/manager.go` | `go m.executeWithRecording(jobCtx, ...)` | **别顺手换**，它自己 recover panic 并要把状态落库，换掉要连 `recordCtx` 与 `cancelMap` 一起验证 |
+
+`conc` 的 panic 语义与这里的现状有交互：它的 `Go` catch 住 panic、在 `Wait()` 处于调用方 goroutine 重抛。`manager.go` 已有自己的 recover 分支（把堆栈拼进 `jobErr` 落库，见下面「错误信息外泄的那条链路」），两者叠加时 panic 由谁处理需要想清楚，不是替换 API 就完事。
+
 ### 路由注册链
 
 handler 实现 `router.Registrar`（一个 `Register(r *gin.RouterGroup)` 方法）→ 加进 `provider.HandlerSet` 的 registrar 列表 → 重新生成 wire。`V1Handlers` 遍历所有 registrar 完成注册，全部挂在 `/api/v1` 下。
