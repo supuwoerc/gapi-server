@@ -8,12 +8,11 @@ import (
 )
 
 func ProvideServerHooks(
-	dynConfig *etcd.DynConfig,
 	discovery *etcd.Discovery,
 	jobManager *cronjob.JobManager,
 	registry *etcd.Registry,
 ) []server.IServerHook {
-	return []server.IServerHook{dynConfig, discovery, jobManager, registry}
+	return []server.IServerHook{discovery, jobManager, registry}
 }
 
 func ProvideCliHooks(discovery *etcd.Discovery) []app.ICliHook {

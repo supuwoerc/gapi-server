@@ -31,13 +31,13 @@ type DiscoveryConfig struct {
 
 // EtcdConfig holds etcd client connection settings.
 type EtcdConfig struct {
-	Endpoints   []string         `mapstructure:"endpoints"`    // etcd 节点地址列表
-	Username    string           `mapstructure:"username"`     // 用户名
-	Password    string           `mapstructure:"password"`     // 密码
-	DialTimeout int              `mapstructure:"dial_timeout"` // 连接超时 (秒)
-	DynConfig   DynConfigOptions `mapstructure:"dyn_config"`   // 动态配置中心
-	Registry    RegistryConfig   `mapstructure:"registry"`     // 服务注册配置
-	Discovery   DiscoveryConfig  `mapstructure:"discovery"`    // 服务发现配置
+	Endpoints    []string            `mapstructure:"endpoints"`     // etcd 节点地址列表
+	Username     string              `mapstructure:"username"`      // 用户名
+	Password     string              `mapstructure:"password"`      // 密码
+	DialTimeout  int                 `mapstructure:"dial_timeout"`  // 连接超时 (秒)
+	RemoteConfig RemoteConfigOptions `mapstructure:"remote_config"` // 远程配置 (仅启动期拉取一次)
+	Registry     RegistryConfig      `mapstructure:"registry"`      // 服务注册配置
+	Discovery    DiscoveryConfig     `mapstructure:"discovery"`     // 服务发现配置
 }
 
 // LogConfig holds logging settings.
@@ -51,28 +51,24 @@ type LogConfig struct {
 }
 
 // Config holds all configuration sections.
+// 所有字段都在启动时读取一次，运行期不再变化——读取方可以长期持有字段指针。
 type Config struct {
-	HotConfig `mapstructure:",squash"`
-	Server    ServerConfig   `mapstructure:"server"`   // HTTP 服务配置
-	Database  DatabaseConfig `mapstructure:"database"` // 数据库配置
-	Log       LogConfig      `mapstructure:"log"`      // 日志配置
-	Redis     RedisConfig    `mapstructure:"redis"`    // Redis 配置
-	Locale    LocaleConfig   `mapstructure:"locale"`   // 国际化配置
-	Cron      CronConfig     `mapstructure:"cron"`     // 定时任务配置
-	Etcd      EtcdConfig     `mapstructure:"etcd"`     // Etcd 配置
-	JWT       JWTConfig      `mapstructure:"jwt"`      // JWT 配置
-	Email     EmailConfig    `mapstructure:"email"`    // 邮件配置
-	Env       string         `mapstructure:"-"`        // 运行环境 (dev/prod/test)
-}
-
-// HotConfig holds configuration sections that can be hot-reloaded at runtime.
-type HotConfig struct {
+	Server    ServerConfig    `mapstructure:"server"`     // HTTP 服务配置
+	Database  DatabaseConfig  `mapstructure:"database"`   // 数据库配置
+	Log       LogConfig       `mapstructure:"log"`        // 日志配置
+	Redis     RedisConfig     `mapstructure:"redis"`      // Redis 配置
+	Locale    LocaleConfig    `mapstructure:"locale"`     // 国际化配置
+	Cron      CronConfig      `mapstructure:"cron"`       // 定时任务配置
+	Etcd      EtcdConfig      `mapstructure:"etcd"`       // Etcd 配置
+	JWT       JWTConfig       `mapstructure:"jwt"`        // JWT 配置
+	Email     EmailConfig     `mapstructure:"email"`      // 邮件配置
 	Cors      CorsConfig      `mapstructure:"cors"`       // 跨域配置
 	RateLimit RateLimitConfig `mapstructure:"rate_limit"` // 限流配置
 	Tour      TourConfig      `mapstructure:"tour"`       // 引导配置
+	Env       string          `mapstructure:"-"`          // 运行环境 (dev/prod/test)
 }
 
-// TourConfig holds valid tour IDs that can be hot-reloaded.
+// TourConfig holds valid tour IDs.
 type TourConfig struct {
 	ValidIDs []string `mapstructure:"valid_ids"` // 合法的引导标识列表
 }
@@ -151,8 +147,13 @@ type EmailConfig struct {
 	UseTLS      bool   `mapstructure:"use_tls"`      // 是否使用 TLS
 }
 
-// DynConfigOptions holds dynamic configuration center settings.
-type DynConfigOptions struct {
+// RemoteConfigOptions holds remote configuration settings.
+// 远程配置只在启动期由 mergeRemoteConfig 拉取并合并一次，运行期不再监听变更，
+// 改远程配置需要重启进程才生效。
+//
+// 这一段只可能来自本地 configs/*.yaml：要先读到它才能连上 etcd，
+// 所以 etcd 里那份远程 YAML 即便写了 remote_config 也不会被用到。
+type RemoteConfigOptions struct {
 	Enabled bool   `mapstructure:"enabled"` // 是否启用远程配置
 	Key     string `mapstructure:"key"`     // etcd 中存储完整 YAML 的 key
 }
@@ -166,7 +167,7 @@ func NewBootstrapConfig(v *viper.Viper) *BootstrapConfig {
 }
 
 func NewConfig(v *viper.Viper, client *clientv3.Client, bootstrap *BootstrapConfig) *Config {
-	if bootstrap.Etcd.DynConfig.Enabled {
+	if bootstrap.Etcd.RemoteConfig.Enabled {
 		mergeRemoteConfig(v, client, &bootstrap.Etcd)
 	}
 	var cfg Config
@@ -178,7 +179,7 @@ func NewConfig(v *viper.Viper, client *clientv3.Client, bootstrap *BootstrapConf
 }
 
 func mergeRemoteConfig(v *viper.Viper, client *clientv3.Client, etcdCfg *EtcdConfig) {
-	key := etcdCfg.DynConfig.Key
+	key := etcdCfg.RemoteConfig.Key
 	if key == "" {
 		return
 	}

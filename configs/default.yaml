@@ -36,7 +36,7 @@ rate_limit:
   prefix: "gapi_limiter"         # Redis key 前缀
 
 tour:
-  valid_ids:                         # 合法的引导标识列表 (通过 etcd DynConfig 热更新)
+  valid_ids:                         # 合法的引导标识列表
     - "welcome"
     - "dashboard"
 
@@ -76,8 +76,8 @@ etcd:
   username: ""                   # 用户名
   password: ""                   # 密码
   dial_timeout: 5                # 连接超时 (秒)
-  dyn_config:
-    enabled: true                # 是否启用远程配置
+  remote_config:
+    enabled: true                # 是否启用远程配置 (仅启动期拉取一次, 改完需重启才生效)
     key: "/gapi/config/app.yaml" # etcd 中存储完整 YAML 的 key
   registry:
     enabled: true                # 是否启用服务注册

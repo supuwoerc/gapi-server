@@ -278,6 +278,7 @@ go vet -tags=integration ./internal/dal/         # 只检查能否编译，不�
 | `TestResourceTypeScanFromSmallint`（integration） | PG 的 SMALLINT 读回枚举 |
 | `TestCheckConstraintsRejectInvalidValues`（integration） | 迁移脚本的 CHECK 约束失效 |
 | `pkg/response/locale_test.go` 三条 | 响应码漏写行尾注释、漏跑 `go generate`、漏补 i18n 词条（或只补一边） |
+| `TestDefaultYamlUnmarshalsIntoConfig` | `mapstructure` tag 与 `configs/default.yaml` 的 key 不一致（改错只会静默落零值，不报错） |
 
 **没有守卫的面**：路由注册（路由变化、漏挂鉴权都不会被发现）、
 `wire_gen.go` / `docs/` / DAL 生成物是否最新、`internal/handler/v1/resp` 无测试
@@ -291,8 +292,9 @@ go vet -tags=integration ./internal/dal/         # 只检查能否编译，不�
   `enum.go` 的两族划分说明是范例，照这个密度来。
 - 中间件顺序有讲究：`Trace` 必须最前（后续都依赖它注入的 trace_id），
   `Recovery` 在业务中间件之前。改 `router.NewEngine` 时不要打乱。
-- 往 `config.HotConfig` 加字段前先确认那个配置项**真的能热生效**——它是运行期被
-  替换的，只在启动时读一次的组件拿不到新值。
+- **配置没有热更新**，`Config` 的全部字段都在启动时读取一次、运行期不再变化。
+  加配置项直接加进 `config.Config` 即可，不需要考虑并发读写；也不要重新引入运行期
+  替换配置的机制（原先的 `HotConfig` / `DynConfig` watch 已删除，见 README「配置」一节）。
 
 ## 不要做的事
 

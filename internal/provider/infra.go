@@ -23,7 +23,6 @@ var BaseInfraSet = wire.NewSet(
 
 var InfraSet = wire.NewSet(
 	BaseInfraSet,
-	etcd.NewDynConfig,
 	etcd.NewRegistry,
 	ProvideServerHooks,
 )

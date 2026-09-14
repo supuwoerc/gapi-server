@@ -9,11 +9,11 @@ Go + Gin 的后端服务骨架。要求 **Go 1.26+**（见 `go.mod`）。
 | Web 框架 | gin |
 | 命令行 | spf13/cobra（运维脚本入口） |
 | 依赖注入 | google/wire（编译期生成） |
-| 配置 | viper，多环境 + etcd 远程配置热更新 |
+| 配置 | viper，多环境 + etcd 远程配置（启动期合并一次） |
 | 日志 | zap + lumberjack 按天切割 |
 | 数据库 | PostgreSQL 18 + GORM，DAL 由 `gorm/gen` 从库反射生成 |
 | 缓存 | Redis 7 |
-| 服务注册发现 / 配置中心 / 分布式锁 | etcd 3.5+ |
+| 服务注册发现 / 远程配置 / 分布式锁 | etcd 3.5+ |
 | 定时任务 | robfig/cron，含执行记录与分布式锁互斥 |
 | 鉴权 | 自签 JWT（golang-jwt）+ 本地 RBAC |
 | 验证码 | wenlng/go-captcha（滑块 / 点选 / 旋转） |
@@ -91,10 +91,10 @@ pkg/
 | --- | --- | --- | --- |
 | PostgreSQL | 18 | `127.0.0.1:5432` | 必需 |
 | Redis | 7 | `127.0.0.1:6379` | 必需（限流、验证码、token） |
-| etcd | 3.5+ | `127.0.0.1:2379` | 必需（注册发现、配置中心、分布式锁） |
+| etcd | 3.5+ | `127.0.0.1:2379` | 必需（注册发现、远程配置、分布式锁） |
 
-etcd 做四件事：**服务注册**、**服务发现**、**配置中心**（热更新 `HotConfig` 段）
-与**分布式锁**（定时任务多实例互斥）。它是**硬依赖**：即便把 `etcd.dyn_config.enabled`
+etcd 做四件事：**服务注册**、**服务发现**、**远程配置**（启动期合并一次）
+与**分布式锁**（定时任务多实例互斥）。它是**硬依赖**：即便把 `etcd.remote_config.enabled`
 关掉，启动时仍会建连，连不上会直接报错退出。
 
 一键起全部依赖：
@@ -143,7 +143,7 @@ swagger UI 在非 prod 环境下位于 `/api/v1/swagger/index.html`。
 | --- | --- | --- |
 | 基础 | `configs/default.yaml` | 全部配置项与默认值，基础设施地址在此按部署环境改 |
 | 环境 | `configs/{dev,prod}.yaml` | 只放**行为差异**，按 `APP_ENV` 选择，默认 `dev` |
-| 远程 | etcd 的 `etcd.dyn_config.key` | 可选，运行期热更新 `HotConfig` 段 |
+| 远程 | etcd 的 `etcd.remote_config.key` | 可选，**启动期**合并整份配置 |
 
 各环境的覆盖内容：
 
@@ -158,12 +158,15 @@ swagger UI 在非 prod 环境下位于 `/api/v1/swagger/index.html`。
 > 三个值（其余回落 `dev`），但 `configs/` 下只有 `default`/`dev`/`prod`——
 > 选到 `test` 时 merge 找不到同名文件会 panic。需要 test 环境就补一个 `configs/test.yaml`。
 
-可热更新的只有 `HotConfig` 里的三段：`cors`、`rate_limit`、`tour`。
-`DynConfig` watch 到 etcd 变更后整体替换这部分，其余配置改了要重启才生效。
+**配置没有热更新，全部在启动时读取一次**，改任何一项（含 etcd 里的远程配置）都要重启
+进程才生效。所以读取方可以放心长期持有配置字段的指针，不需要考虑运行期被替换。
 
-> 远程配置的合并是 `viper.MergeConfig`，作用于**整份配置**而非仅 `HotConfig`，
-> 也就是说 etcd 里的内容可以覆盖数据库账号密码。多环境共用同一套 etcd 集群时，
-> 务必给各环境配不同的 `etcd.dyn_config.key`，否则会互相读到对方的配置。
+> 远程配置的合并是 `viper.MergeConfig`，作用于**整份配置**，也就是说 etcd 里的内容
+> 可以覆盖数据库账号密码。多环境共用同一套 etcd 集群时，务必给各环境配不同的
+> `etcd.remote_config.key`，否则会互相读到对方的配置。
+>
+> `etcd.remote_config` 这一段本身只能来自本地 `configs/*.yaml`——要先读到它才能连上
+> etcd，所以把它写进 etcd 里那份远程 YAML 是无效的。
 
 ## 鉴权
 

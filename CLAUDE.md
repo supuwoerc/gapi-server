@@ -74,7 +74,7 @@ go vet -tags=integration ./internal/dal/          # 只检查能否编译，不�
 
 ### 三个入口，共用一套 provider
 
-`cmd/server`（HTTP）、`cmd/cli`（cobra 运维脚本）、`cmd/gen`（DAL 代码生成）各有独立的 wire 注入，共享 `internal/provider` 下的 provider set。`BaseInfraSet` 是公用部分，`InfraSet` 额外挂 server 专用的 `etcd.NewDynConfig` 与 `etcd.NewRegistry`，`CliInfraSet` 则不含这两个。依赖聚合体分别是 `app.App` / `app.Cli` / `app.Gen`，各自的 `Close()` 统一释放连接。
+`cmd/server`（HTTP）、`cmd/cli`（cobra 运维脚本）、`cmd/gen`（DAL 代码生成）各有独立的 wire 注入，共享 `internal/provider` 下的 provider set。`BaseInfraSet` 是公用部分，`InfraSet` 额外挂 server 专用的 `etcd.NewRegistry`，`CliInfraSet` 则不含它。依赖聚合体分别是 `app.App` / `app.Cli` / `app.Gen`，各自的 `Close()` 统一释放连接。
 
 `cmd/gen` 自己也走 wire 拿 DB 连接——**它是代码生成器，却依赖运行期的数据库**，这个环形关系在 provider 里看不出来。
 
@@ -89,7 +89,7 @@ server 和 CLI 各有一套钩子接口，**别混用**：
 
 时序在 `internal/server/server.go`：`OnStart` 在监听前串行执行，失败即 `Fatal`；`OnReady` 在后台协程里轮询 TCP 拨号确认端口可连后才触发，10s 拨不通就跳过（不 Fatal）；`OnStop` **逆序**执行。Linux 上走 `gracehttp`（平滑重启），其他平台走标准 `ListenAndServe` + 信号监听。
 
-`etcd.Discovery` / `etcd.DynConfig` 同时实现了两套接口（`OnStart`/`OnStop` 和 `OnInit`/`OnClose`），所以能同时挂在 server 和 CLI 上。新增钩子在 `internal/provider/hook.go` 注册。
+`etcd.Discovery` 同时实现了两套接口（`OnStart`/`OnStop` 和 `OnInit`/`OnClose`），所以能同时挂在 server 和 CLI 上。新增钩子在 `internal/provider/hook.go` 注册。
 
 ### 配置的两阶段加载
 
@@ -98,7 +98,11 @@ server 和 CLI 各有一套钩子接口，**别混用**：
 1. `BootstrapConfig` —— 本地文件即可解析出的部分，用于先把 etcd 客户端与 logger 拉起来
 2. `NewConfig` —— 借 etcd 客户端 merge 远程配置，产出完整的 `Config`
 
-想加"启动早期就要用"的配置项（影响 logger 或 etcd 建连本身的），得动第一步；否则只加进 `Config` 即可。分层规则与 `HotConfig` 的坑见 README。
+想加"启动早期就要用"的配置项（影响 logger 或 etcd 建连本身的），得动第一步；否则只加进 `Config` 即可。分层规则见 README。
+
+这个先后顺序还带来一个约束：`etcd.remote_config` 那一段**只可能来自本地 `configs/*.yaml`**。`wire_gen.go` 里的次序是 `NewBootstrapConfig`（读本地）→ `etcd.NewClient`（用 bootstrap 里的 etcd 配置建连）→ `NewConfig`（merge 远程），要先读到它才能连上 etcd，所以把它写进 etcd 里那份远程 YAML 不会生效。
+
+**配置读一次就固定**：两步都发生在启动期，`Config` 产出后运行期不再被改写，所以 `internal/provider/config.go` 里 `ProvideCorsConfig` 这类返回 `&cfg.Xxx` 的 provider 是安全的，中间件与 service 可以长期持有那个指针。原先有一套 `HotConfig` + `etcd.DynConfig` watch 在运行期整体替换 `cors` / `rate_limit` / `tour` 三段，已删除——它带来的问题是读侧无锁读被并发替换的 slice（撕裂读）、以及 `middleware.RateLimit` 构造期读一次 pattern 导致热更新实际无效。**不要重新引入运行期替换配置的机制。**
 
 ### 定时任务运行时
 
